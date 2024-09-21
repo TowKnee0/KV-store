@@ -1,55 +1,60 @@
 #include "bst.h"
 #include <optional>
 #include <iostream>
+#include <memory>
 
 using namespace std;
 
-// implementations are taken directly from CLRS 
-Bst::Bst(int memtable_size) {
-    max_size = memtable_size;
-    c_size = 0;
-}
+// implementations were taken directly from CLRS pseudocode.
+// only addition made is the use for smart pointers.
+Bst::Bst(int memtable_size) : max_size(memtable_size), c_size(0), root(nullptr) {}
 
-void Bst::leftRotate(node* x) {
-    if (x == nullptr || x->right == nullptr)
+void Bst::leftRotate(shared_ptr<node> x) {
+    if (!x || !x->right)
         return;
 
-    node* y  = x->right;
+    auto y = x->right;
     x->right = y->left;
 
-    if (y->left != nullptr){
-        y->left->parent = x;
+    if (x->right) {
+        x->right->parent = x;
     }
     y->parent = x->parent;
-    if (x->parent == nullptr){
-        root = y;
-    } else if (x == x->parent->left) {
-        x->parent->left = y;
+    if (auto parentPtr = x->parent.lock()) {
+        if (x == parentPtr->left) {
+            parentPtr->left = y;
+        } else {
+            parentPtr->right = y;
+        }
     } else {
-        x->parent->right = y;
+        root = y;
     }
+
     y->left = x;
     x->parent = y;
 }
 
-void Bst::rightRotate(node* y) {
-    if (y == nullptr || y->left == nullptr)
+void Bst::rightRotate(shared_ptr<node> y) {
+    if (!y || !y->left)
         return;
 
-
-    node* x = y->left;
+    auto x = y->left;
     y->left = x->right;
-    if (x->right != nullptr){
-        x->right->parent = y;
+
+    if (y->left) {
+        y->left->parent = y;
     }
     x->parent = y->parent;
-    if (y->parent == nullptr){
-        root = x;
-    } else if (y == y->parent->right){
-        y->parent->right = x;
+    if (auto parentPtr = y->parent.lock()) {
+        if (y == parentPtr->right) {
+            parentPtr->right = x;
+        } else {
+            parentPtr->left = x;
+        }
     } else {
-        y->parent->left = x;
+        root = x;
     }
+
     x->right = y;
     y->parent = x;
 }
@@ -59,9 +64,9 @@ ErrorCode Bst::put(int key, int value) {
         return TREE_FULL;
     }
 
-    node* x = root;
-    node* y = nullptr;
-    node* z = new node();
+    shared_ptr<node> x = root;
+    shared_ptr<node> y = nullptr;
+    auto z = make_shared<node>();
     z->key = key;
     z->value = value;
 
@@ -75,9 +80,9 @@ ErrorCode Bst::put(int key, int value) {
     }
 
     z->parent = y;
-    if (y == nullptr) {
+    if (!y) {
         root = z;
-    } else if (z->key < y->key){
+    } else if (z->key < y->key) {
         y->left = z;
     } else {
         y->right = z;
@@ -87,55 +92,54 @@ ErrorCode Bst::put(int key, int value) {
     z->color = RED;
     fix(z);
     c_size++;
-    cout << "GOT HERE3";
     return SUCCESS;
 }
 
-void Bst::fix(node* z) {
-    while (z!= root && z->parent->color == RED){
-        if (z->parent == z->parent->parent->left){
-            node* y = z->parent->parent->right;
-            if (y != nullptr && y->color == RED) {
-                z->parent->color == BLACK;
+void Bst::fix(shared_ptr<node> z) {
+    while (z != root && z->parent.lock()->color == RED) {
+        if (z->parent.lock() == z->parent.lock()->parent.lock()->left) {
+            auto y = z->parent.lock()->parent.lock()->right;
+            if (y && y->color == RED) {
+                z->parent.lock()->color = BLACK;
                 y->color = BLACK;
-                z->parent->parent->color = RED;
-                z = z->parent->parent;
-            } else{
-                if (z == z->parent->right){
-                    z = z->parent;
+                z->parent.lock()->parent.lock()->color = RED;
+                z = z->parent.lock()->parent.lock();
+            } else {
+                if (z == z->parent.lock()->right) {
+                    z = z->parent.lock();
                     leftRotate(z);
                 }
-                z->parent->color == BLACK;
-                z->parent->parent->color = RED;
-                rightRotate(z->parent->parent);
+                z->parent.lock()->color = BLACK;
+                z->parent.lock()->parent.lock()->color = RED;
+                rightRotate(z->parent.lock()->parent.lock());
             }
         } else {
-            node* y = z->parent->parent->left;
-            if (y != nullptr && y->color == RED) {
-                z->parent->color = BLACK;
+            auto y = z->parent.lock()->parent.lock()->left;
+            if (y && y->color == RED) {
+                z->parent.lock()->color = BLACK;
                 y->color = BLACK;
-                z->parent->parent->color = RED;
-                z = z->parent->parent;
+                z->parent.lock()->parent.lock()->color = RED;
+                z = z->parent.lock()->parent.lock();
             } else {
-                if (z == z->parent->left){
-                    z = z->parent;
+                if (z == z->parent.lock()->left) {
+                    z = z->parent.lock();
                     rightRotate(z);
                 }
-                z->parent->color = BLACK;
-                z->parent->parent->color = RED;
-                leftRotate(z->parent->parent);
+                z->parent.lock()->color = BLACK;
+                z->parent.lock()->parent.lock()->color = RED;
+                leftRotate(z->parent.lock()->parent.lock());
             }
         }
     }
     root->color = BLACK;
 }
 
-optional<int> Bst::get(int key){
-    node* curr = root;
-    while (curr != nullptr){
-        if (key == curr->key){
+optional<int> Bst::get(int key) {
+    shared_ptr<node> curr = root;
+    while (curr != nullptr) {
+        if (key == curr->key) {
             return curr->value;
-        } else if (key < curr->key){
+        } else if (key < curr->key) {
             curr = curr->left;
         } else {
             curr = curr->right;

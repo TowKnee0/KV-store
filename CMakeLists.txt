@@ -11,6 +11,9 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Catch2)
 
+# DEBUG
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined -g")
+
 add_executable(bst_tests src/memtable/bst.test.cpp src/memtable/bst.cpp)
 target_link_libraries(bst_tests PRIVATE Catch2::Catch2WithMain)
 
