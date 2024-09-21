@@ -23,10 +23,10 @@ class SST {
     private:
         time_t creation_time; // When was this SST created
         string filename; // Which file the SST is stored in
-        vector<entry> entries; // What is contained in this SST
+        vector<vector<pair<int, int>>> entries; // What is contained in this SST
      
     public:
-        SST(const vector<entry>& data, const string& filename); // The SST should be assigned a unique name.
+        SST(const vector<pair<int, int>>& data, const string& filename); // The SST should be assigned a unique name.
         optional<int> get(int key); // Search the corresponding value for this key
 
         // It is not known in advance how many key-value pairs are in the target range
