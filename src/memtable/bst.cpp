@@ -8,8 +8,6 @@ using namespace std;
 Bst::Bst(int memtable_size) {
     max_size = memtable_size;
     c_size = 0;
-    sentinel = new node();
-    sentinel->color = BLACK;
 }
 
 void Bst::leftRotate(node* x) {

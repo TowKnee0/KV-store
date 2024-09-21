@@ -23,7 +23,6 @@ class Bst {
         int max_size;
         int c_size;
         node* root;
-        node* sentinel; // TODO: denotes nil. check if this is needed
 
         void leftRotate(node* x);
         void rightRotate(node * x);
