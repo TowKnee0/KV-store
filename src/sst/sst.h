@@ -12,7 +12,7 @@
 
 using namespace std;
 
-enum ErrorCode {SUCCESS};
+enum ErrorCode {SUCCESS, WRITE_FAILURE};
 
 struct entry {
     int key;
@@ -23,15 +23,12 @@ class SST {
     private:
         time_t creation_time; // When was this SST created
         string filename; // Which file the SST is stored in
-        vector<vector<pair<int, int>>> entries; // What is contained in this SST
-     
+        vector<pair<int, int>> entries; // What is contained in this SST
+        ErrorCode writeToFile(); // For writing the SST contents to storage
     public:
         SST(const vector<pair<int, int>>& data, const string& filename); // The SST should be assigned a unique name.
-        optional<int> get(int key); // Search the corresponding value for this key
-
-        // It is not known in advance how many key-value pairs are in the target range
-        // So we will need to return a pointer to an array of results along with the size of this array
-        pair<vector<entry>*, int> scan(int rangeStart, int rangeEnd);
+        optional<int> get(int key); // Search the corresponding value for this key.
+        vector<entry>* scan(int rangeStart, int rangeEnd); // Return all currently existing key-value pairs (as entry struct) that are in the given target range
 };
 
 #endif
