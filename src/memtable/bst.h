@@ -3,6 +3,8 @@
 
 #include <optional>
 #include <memory>
+#include <vector>
+#include <utility>
 
 using namespace std;
 
@@ -27,12 +29,16 @@ class Bst {
 
         void leftRotate(shared_ptr<node> x);
         void rightRotate(shared_ptr<node> x);
-
         void fix(shared_ptr<node> z);
+
+        void inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>& v);
     public:
         Bst(int memtable_size);
+
         ErrorCode put(int key, int value);
         optional<int> get(int key);
+
+        vector<pair<int, int>> inOrder();
 };
 
 #endif

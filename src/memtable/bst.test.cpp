@@ -45,8 +45,19 @@ TEST_CASE("Bst get") {
   REQUIRE(b.get(4) == nullopt);
 }
 
-// TEST_CASE("Bst red black property") {
-//   Bst b(5);
-//   REQUIRE(b.get(1) == nullopt);
-//   b.put(1, 2);
-// }
+TEST_CASE("Bst inOrder") {
+  Bst b(5);
+  b.put(1, 1);
+  b.put(5, 5);
+  b.put(2, 2);
+  b.put(4, 4);
+  b.put(3, 3);
+  vector<pair<int, int>> vec = {
+    {1, 1},
+    {2, 2},
+    {3, 3},
+    {4, 4},
+    {5, 5},
+  };
+  REQUIRE(b.inOrder() == vec);
+}
