@@ -10,49 +10,50 @@ using namespace std;
 Bst::Bst(int memtable_size) : max_size(memtable_size), c_size(0), root(nullptr) {}
 
 void Bst::leftRotate(shared_ptr<node> x) {
-    if (!x || !x->right)
+    if (x == nullptr || x->right == nullptr)
         return;
 
-    auto y = x->right;
+    shared_ptr<node> y = x->right;
     x->right = y->left;
 
-    if (x->right) {
-        x->right->parent = x;
+    if (y->left != nullptr) {
+        y->left->parent = x;
     }
     y->parent = x->parent;
-    if (auto parentPtr = x->parent.lock()) {
-        if (x == parentPtr->left) {
-            parentPtr->left = y;
-        } else {
-            parentPtr->right = y;
-        }
-    } else {
-        root = y;
-    }
 
+    shared_ptr<node> xp = x->parent.lock();
+    if (xp == nullptr) {
+        root = y;
+    } else if (x == xp->left)
+    {
+        xp->left = y;
+    } else {
+        xp->right = y;
+    }
+    
     y->left = x;
     x->parent = y;
 }
 
 void Bst::rightRotate(shared_ptr<node> y) {
-    if (!y || !y->left)
+    if (y == nullptr || y->left == nullptr)
         return;
 
-    auto x = y->left;
+    shared_ptr<node> x = y->left;
     y->left = x->right;
 
-    if (y->left) {
-        y->left->parent = y;
+    if (x->right != nullptr) {
+        x->right->parent = y;
     }
     x->parent = y->parent;
-    if (auto parentPtr = y->parent.lock()) {
-        if (y == parentPtr->right) {
-            parentPtr->right = x;
-        } else {
-            parentPtr->left = x;
-        }
-    } else {
+
+    shared_ptr<node> yp = y->parent.lock();
+    if (yp == nullptr) {
         root = x;
+    } else if (y == yp->right) {
+        yp->right = x;
+    } else {
+        yp->left = x;
     }
 
     x->right = y;
@@ -66,7 +67,7 @@ ErrorCode Bst::put(int key, int value) {
 
     shared_ptr<node> x = root;
     shared_ptr<node> y = nullptr;
-    auto z = make_shared<node>();
+    shared_ptr<node> z = make_shared<node>();
     z->key = key;
     z->value = value;
 
@@ -80,7 +81,7 @@ ErrorCode Bst::put(int key, int value) {
     }
 
     z->parent = y;
-    if (!y) {
+    if (y != nullptr) {
         root = z;
     } else if (z->key < y->key) {
         y->left = z;
@@ -98,8 +99,8 @@ ErrorCode Bst::put(int key, int value) {
 void Bst::fix(shared_ptr<node> z) {
     while (z != root && z->parent.lock()->color == RED) {
         if (z->parent.lock() == z->parent.lock()->parent.lock()->left) {
-            auto y = z->parent.lock()->parent.lock()->right;
-            if (y && y->color == RED) {
+            shared_ptr<node> y = z->parent.lock()->parent.lock()->right;
+            if (y != nullptr && y->color == RED) {
                 z->parent.lock()->color = BLACK;
                 y->color = BLACK;
                 z->parent.lock()->parent.lock()->color = RED;
@@ -114,7 +115,7 @@ void Bst::fix(shared_ptr<node> z) {
                 rightRotate(z->parent.lock()->parent.lock());
             }
         } else {
-            auto y = z->parent.lock()->parent.lock()->left;
+            shared_ptr<node> y = z->parent.lock()->parent.lock()->left;
             if (y && y->color == RED) {
                 z->parent.lock()->color = BLACK;
                 y->color = BLACK;

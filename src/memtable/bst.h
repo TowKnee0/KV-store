@@ -29,9 +29,6 @@ class Bst {
         void rightRotate(shared_ptr<node> x);
 
         void fix(shared_ptr<node> z);
-
-        ~Bst();
-        void clear(shared_ptr<node> n);
     public:
         Bst(int memtable_size);
         ErrorCode put(int key, int value);
