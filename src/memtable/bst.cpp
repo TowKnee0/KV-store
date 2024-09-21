@@ -1,5 +1,5 @@
-#include "bst.hpp"
-
+#include "bst.h"
+#include <optional>
 
 using namespace std;
 
@@ -48,7 +48,11 @@ void Bst::rightRotate(node* y) {
     y->parent = x;
 }
 
-void Bst::put(int key, int value) {
+ErrorCode Bst::put(int key, int value) {
+    if (c_size == max_size) {
+        return TREE_FULL;
+    }
+
     node* x = root;
     node* y;
     node* z = new node();
@@ -76,6 +80,8 @@ void Bst::put(int key, int value) {
     z->right = nullptr;
     z->color = RED;
     fix(z);
+    c_size++;
+    return SUCCESS;
 }
 
 void Bst::fix(node* z) {
@@ -117,8 +123,7 @@ void Bst::fix(node* z) {
     root->color = BLACK;
 }
 
-// TODO: this will need to handdle the case where there is no occurance. For now im just returning -1
-int Bst::get(int key){
+optional<int> Bst::get(int key){
     node* curr = root;
     while (curr != nullptr){
         if (key == curr->key){
@@ -129,5 +134,5 @@ int Bst::get(int key){
             curr = curr->right;
         }
     }
-    return -1;
+    return nullopt;
 }

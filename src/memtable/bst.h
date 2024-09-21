@@ -1,6 +1,23 @@
 #ifndef BST_H
 #define BST_H
 
+#include <optional>
+
+using namespace std;
+
+enum colors {RED, BLACK};
+enum ErrorCode {SUCCESS, TREE_FULL};
+
+struct node
+    {
+        int key;
+        int value;
+        colors color;
+        node* left;
+        node* right;
+        node* parent;
+};
+
 class Bst {
     private:
         int max_size;
@@ -14,20 +31,8 @@ class Bst {
         void fix(node* z);
     public:
         Bst(int memtable_size);
-        void put(int key, int value);
-        int get(int key);
-};
-
-enum color {RED, BLACK};
-
-struct node
-    {
-        int key;
-        int value;
-        color color;
-        node* left;
-        node* right;
-        node* parent;
+        ErrorCode put(int key, int value);
+        optional<int> get(int key);
 };
 
 #endif
