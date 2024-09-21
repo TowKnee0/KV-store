@@ -6,7 +6,6 @@
 #ifndef SST_H
 #define SST_H
 
-#include "../memtable/bst.h" // Include the BST header
 #include <optional>
 #include <vector>
 #include <string>
@@ -25,7 +24,7 @@ class SST {
         string filename; // Which file the SST is stored in
         ErrorCode writeToFile(); // For writing the SST contents to storage
     public:
-        SST(const vector<pair<int, int>>& data, const string& filename); // The SST should be assigned a unique name.
+        SST(const vector<pair<int, int>>& data, string filename); // The SST should be assigned a unique name.
         optional<int> get(int key); // Search the corresponding value for this key.
         vector<entry>* scan(int rangeStart, int rangeEnd); // Return all currently existing key-value pairs (as entry struct) that are in the given target range
 };
