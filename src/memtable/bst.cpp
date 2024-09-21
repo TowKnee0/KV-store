@@ -1,5 +1,6 @@
 #include "bst.h"
 #include <optional>
+#include <iostream>
 
 using namespace std;
 
@@ -12,6 +13,9 @@ Bst::Bst(int memtable_size) {
 }
 
 void Bst::leftRotate(node* x) {
+    if (x == nullptr || x->right == nullptr)
+        return;
+
     node* y  = x->right;
     x->right = y->left;
 
@@ -31,6 +35,10 @@ void Bst::leftRotate(node* x) {
 }
 
 void Bst::rightRotate(node* y) {
+    if (y == nullptr || y->left == nullptr)
+        return;
+
+
     node* x = y->left;
     y->left = x->right;
     if (x->right != nullptr){
@@ -54,7 +62,7 @@ ErrorCode Bst::put(int key, int value) {
     }
 
     node* x = root;
-    node* y;
+    node* y = nullptr;
     node* z = new node();
     z->key = key;
     z->value = value;
@@ -81,14 +89,15 @@ ErrorCode Bst::put(int key, int value) {
     z->color = RED;
     fix(z);
     c_size++;
+    cout << "GOT HERE3";
     return SUCCESS;
 }
 
 void Bst::fix(node* z) {
-    while (z->parent->color == RED){
+    while (z!= root && z->parent->color == RED){
         if (z->parent == z->parent->parent->left){
             node* y = z->parent->parent->right;
-            if (y->color == RED) {
+            if (y != nullptr && y->color == RED) {
                 z->parent->color == BLACK;
                 y->color = BLACK;
                 z->parent->parent->color = RED;
@@ -104,7 +113,7 @@ void Bst::fix(node* z) {
             }
         } else {
             node* y = z->parent->parent->left;
-            if (y->color == RED) {
+            if (y != nullptr && y->color == RED) {
                 z->parent->color = BLACK;
                 y->color = BLACK;
                 z->parent->parent->color = RED;
