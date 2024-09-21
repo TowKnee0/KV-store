@@ -22,7 +22,6 @@ struct entry {
 class SST {
     private:
         string filename; // Which file the SST is stored in
-        ErrorCode writeToFile(); // For writing the SST contents to storage
     public:
         SST(const vector<pair<int, int>>& data, string filename); // The SST should be assigned a unique name.
         optional<int> get(int key); // Search the corresponding value for this key.
