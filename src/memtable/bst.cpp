@@ -81,7 +81,7 @@ ErrorCode Bst::put(int key, int value) {
     }
 
     z->parent = y;
-    if (y != nullptr) {
+    if (y == nullptr) {
         root = z;
     } else if (z->key < y->key) {
         y->left = z;
