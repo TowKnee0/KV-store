@@ -11,3 +11,7 @@ SST::SST(const vector<pair<int, int>>& data, string filename) {
         throw ios_base::failure("Failed to write to file " + filename);
     }
 }
+
+optional<int> SST::get(int key){}
+
+vector<entry>* SST::scan(int rangeStart, int rangeEnd){}

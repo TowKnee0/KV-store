@@ -1,0 +1,1 @@
+add_library(sst sst.cpp)

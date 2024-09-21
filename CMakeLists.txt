@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(KV-store LANGUAGES CXX)
 
-Include(FetchContent)
+enable_testing()
+
+include(FetchContent)
 
 FetchContent_Declare(
   Catch2
@@ -14,11 +16,4 @@ FetchContent_MakeAvailable(Catch2)
 # DEBUG
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined -g")
 
-add_executable(bst_tests src/memtable/bst.test.cpp src/memtable/bst.cpp)
-target_link_libraries(bst_tests PRIVATE Catch2::Catch2WithMain)
-
-include(CTest)
-include(Catch)
-catch_discover_tests(bst_tests)
-
-add_executable(KV-store main.cpp)
+add_subdirectory(src)
