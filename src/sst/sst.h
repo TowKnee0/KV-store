@@ -26,7 +26,7 @@ class SST {
         vector<entry> entries; // What is contained in this SST
      
     public:
-        SST(const Bst& memtable, const string& filename); // The SST should be assigned a unique name.
+        SST(const vector<entry>& data, const string& filename); // The SST should be assigned a unique name.
         optional<int> get(int key); // Search the corresponding value for this key
 
         // It is not known in advance how many key-value pairs are in the target range
