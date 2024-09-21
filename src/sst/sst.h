@@ -2,6 +2,7 @@
 // When a memtable reaches capacity we need to transform it into an SST (Sorted String Table).
 // The memtable will output all the key-value pairs to a sorted file which we will save in our storage device.
 // We will handle only integer primitive datatype for simplicity. i.e. both the key and value is an integer
+
 #ifndef SST_H
 #define SST_H
 
@@ -21,9 +22,7 @@ struct entry {
 
 class SST {
     private:
-        time_t creation_time; // When was this SST created
         string filename; // Which file the SST is stored in
-        vector<pair<int, int>> entries; // What is contained in this SST
         ErrorCode writeToFile(); // For writing the SST contents to storage
     public:
         SST(const vector<pair<int, int>>& data, const string& filename); // The SST should be assigned a unique name.
