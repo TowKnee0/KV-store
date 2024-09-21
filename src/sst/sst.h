@@ -31,7 +31,7 @@ class SST {
 
         // It is not known in advance how many key-value pairs are in the target range
         // So we will need to return a pointer to an array of results along with the size of this array
-        pair<vector<vector<entry>>, int> scan(int rangeStart, int rangeEnd);
+        pair<vector<entry>*, int> scan(int rangeStart, int rangeEnd);
 };
 
 #endif
