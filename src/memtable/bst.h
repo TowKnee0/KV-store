@@ -2,6 +2,7 @@
 #define BST_H
 
 #include <optional>
+#include <memory>
 
 using namespace std;
 
@@ -13,21 +14,24 @@ struct node
         int key;
         int value;
         colors color;
-        node* left;
-        node* right;
-        node* parent;
+        shared_ptr<node> left;
+        shared_ptr<node> right;
+        weak_ptr<node> parent;
 };
 
 class Bst {
     private:
         int max_size;
         int c_size;
-        node* root;
+        shared_ptr<node> root;
 
-        void leftRotate(node* x);
-        void rightRotate(node * x);
+        void leftRotate(shared_ptr<node> x);
+        void rightRotate(shared_ptr<node> x);
 
-        void fix(node* z);
+        void fix(shared_ptr<node> z);
+
+        ~Bst();
+        void clear(shared_ptr<node> n);
     public:
         Bst(int memtable_size);
         ErrorCode put(int key, int value);

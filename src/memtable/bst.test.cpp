@@ -30,6 +30,8 @@ TEST_CASE("Bst put") {
 
 TEST_CASE("Bst get") {
   Bst b(3);
+  REQUIRE(b.get(1) == nullopt);
+
   b.put(1, 2);
   REQUIRE(b.get(1) == 2);
 
@@ -44,5 +46,7 @@ TEST_CASE("Bst get") {
 }
 
 // TEST_CASE("Bst red black property") {
-
+//   Bst b(5);
+//   REQUIRE(b.get(1) == nullopt);
+//   b.put(1, 2);
 // }
