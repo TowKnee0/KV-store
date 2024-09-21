@@ -15,17 +15,14 @@
 
 using namespace std; 
 
-enum ErrorCode {
-    WRITE_FAILURE
-};
-
 /*
  * Write key-value pairs to a binary file.
+ * Returns 1 if successful and -1 if unsuccessful.
  * Parameters:
  *  - filename: the name of the file to write to.
  *  - data: vector of key-value pairs to write into the file named filename.
  */
-ErrorCode writeToFile(const string filename, const vector<pair<int, int>>& data);
+int writeToFile(const string filename, const vector<pair<int, int>>& data);
 
 /*
  * Read a specific page (4KB) of key-value pairs from a binary file.
