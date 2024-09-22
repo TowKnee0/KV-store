@@ -92,36 +92,38 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
 optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber) {
     string fullPath = constructFilePath(dbname, filename);
     ifstream in(fullPath, ios_base::binary);
-    
+
     // pageNumber is 1-indexed
     size_t offset = (pageNumber - 1) * PAGE_SIZE;
 
     in.seekg(offset);
-    
-     // Check if the seek was successful or if we are at the end of the file.
-    if (in.fail() || in.eof()) {
+
+    // Check if the seek was unsuccessful.
+    if (in.fail()) {
         return nullopt; 
     }
 
+    // Create a buffer to read the entire page
+    char buffer[PAGE_SIZE];
+    in.read(buffer, PAGE_SIZE);
+
+
     vector<pair<int, int>> pairs;
 
-    for (int i = 0; i < MAX_PAIRS; ++i) {
-        // Process the current pair we are looking at in the file.
+    // Calculate how many pairs we need to process based on the count of bytes read
+    streamsize bytesRead = in.gcount();
+    int pairsRead = bytesRead / PAIR_SIZE;
+
+    // Process the buffer to extract pairs
+    for (int i = 0; i < pairsRead; ++i) {
         pair<int, int> current_pair;
-        in.read(reinterpret_cast<char*>(&current_pair.first), sizeof(int));
-        
-        // Stop reading if we hit the end of the file.
-        if (in.eof()) {
-            break;
-        }
-        
-        // Read value.
-        in.read(reinterpret_cast<char*>(&current_pair.second), sizeof(int));
 
-        if (in.eof()) {
-            break;
-        }
+        // Calculate the offset in the buffer
+        int pairOffset = i * PAIR_SIZE;
 
+        // Copy the key and value from the buffer into the current_pair
+        memcpy(&current_pair.first, &buffer[pairOffset], sizeof(int));
+        memcpy(&current_pair.second, &buffer[pairOffset + sizeof(int)], sizeof(int));
         pairs.push_back(current_pair);
     }
 
@@ -129,6 +131,7 @@ optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const str
     return pairs; // Return the read key-value pairs.
 }
 
+// TODO: Delete this
 int main() {
     // Sample database and filename
     string dbname = "test_db";
@@ -136,7 +139,7 @@ int main() {
 
     // Generate a large dataset to write
     vector<pair<int, int>> data;
-    for (int i = 1; i <= 1000; ++i) {
+    for (int i = 1; i <= 3000; ++i) {
         pair<int, int> newPair = {i, i + 1};
         data.push_back(newPair);
     }
@@ -151,7 +154,7 @@ int main() {
     }
     cout << "Successfully wrote " << data.size() << " pairs to the file." << endl;
 
-    for (int pageNum = 1; pageNum <= 5; pageNum++) {
+    for (int pageNum = 1; pageNum <= 10; pageNum++) {
         cout << "Attempting to read page " << pageNum << " from the file..." << endl;
         optional<vector<pair<int, int>>> readData = readPageFromFile(dbname, filename, pageNum);
         if (!readData) {
