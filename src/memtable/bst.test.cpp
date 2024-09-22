@@ -61,3 +61,16 @@ TEST_CASE("Bst inOrder") {
   };
   REQUIRE(b.inOrder() == vec);
 }
+
+TEST_CASE("Bst clear") {
+  Bst b(5);
+  b.put(1, 1);
+  b.put(5, 5);
+  b.put(2, 2);
+  b.put(4, 4);
+  b.put(3, 3);
+  REQUIRE(b.c_size == 5);
+  b.clear();
+  REQUIRE(b.c_size == 0);
+  REQUIRE(b.root == nullptr);
+}
