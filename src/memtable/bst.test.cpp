@@ -12,19 +12,19 @@ TEST_CASE("Bst initialization") {
 
 TEST_CASE("Bst put") {
   Bst b(3);
-  REQUIRE(b.put(1, 1) == SUCCESS);
+  REQUIRE(b.put(1, 1) == EXIT_SUCCESS);
   REQUIRE(b.c_size == 1);
 
-  REQUIRE(b.put(2, 1) == SUCCESS);
+  REQUIRE(b.put(2, 1) == EXIT_SUCCESS);
   REQUIRE(b.c_size == 2);
 
-  REQUIRE(b.put(3, 1) == SUCCESS);
+  REQUIRE(b.put(3, 1) == EXIT_SUCCESS);
   REQUIRE(b.c_size == 3);
 
-  REQUIRE(b.put(4, 1) == TREE_FULL);
+  REQUIRE(b.put(4, 1) == EXIT_FAILURE);
   REQUIRE(b.c_size == 3);
 
-  REQUIRE(b.put(5, 1) == TREE_FULL);
+  REQUIRE(b.put(5, 1) == EXIT_FAILURE);
   REQUIRE(b.c_size == 3);
 }
 
@@ -60,4 +60,17 @@ TEST_CASE("Bst inOrder") {
     {5, 5},
   };
   REQUIRE(b.inOrder() == vec);
+}
+
+TEST_CASE("Bst clear") {
+  Bst b(5);
+  b.put(1, 1);
+  b.put(5, 5);
+  b.put(2, 2);
+  b.put(4, 4);
+  b.put(3, 3);
+  REQUIRE(b.c_size == 5);
+  b.clear();
+  REQUIRE(b.c_size == 0);
+  REQUIRE(b.root == nullptr);
 }

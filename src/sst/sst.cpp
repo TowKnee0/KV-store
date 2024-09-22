@@ -5,13 +5,18 @@
 
 using namespace std;
 
-SST::SST(const vector<pair<int, int>>& data, string filename) {
+Sst::Sst(string filename, string dbname) {
     filename = filename;
-    if (writeToFile(filename, data) == -1) {
-        throw ios_base::failure("Failed to write to file " + filename);
-    }
+    dbname = dbname;
 }
 
-optional<int> SST::get(int key){}
+int Sst::write(const vector<pair<int, int>>& data) {
+    if (writeToFile(filename, data) == -1) {
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
+}
 
-vector<entry>* SST::scan(int rangeStart, int rangeEnd){}
+optional<int> Sst::get(int key){}
+
+vector<entry>* Sst::scan(int rangeStart, int rangeEnd){}

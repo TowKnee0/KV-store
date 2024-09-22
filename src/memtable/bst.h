@@ -9,7 +9,6 @@
 using namespace std;
 
 enum colors {RED, BLACK};
-enum ErrorCode {SUCCESS, TREE_FULL};
 
 struct node
     {
@@ -35,10 +34,13 @@ class Bst {
     public:
         Bst(int memtable_size);
 
-        ErrorCode put(int key, int value);
+        int put(int key, int value);
         optional<int> get(int key);
 
         vector<pair<int, int>> inOrder();
+
+        int count();
+        void clear();
 };
 
 #endif

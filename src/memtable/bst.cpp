@@ -60,9 +60,9 @@ void Bst::rightRotate(shared_ptr<node> y) {
     y->parent = x;
 }
 
-ErrorCode Bst::put(int key, int value) {
+int Bst::put(int key, int value) {
     if (c_size == max_size) {
-        return TREE_FULL;
+        return EXIT_FAILURE;
     }
 
     shared_ptr<node> x = root;
@@ -93,7 +93,7 @@ ErrorCode Bst::put(int key, int value) {
     z->color = RED;
     fix(z);
     c_size++;
-    return SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 void Bst::fix(shared_ptr<node> z) {
@@ -164,4 +164,13 @@ void Bst::inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>& v) {
     inOrderHelper(c->left, v);
     v.push_back(make_pair(c->key, c->value));
     inOrderHelper(c->right, v);
+}
+
+void Bst::clear() {
+    root = nullptr;
+    c_size = 0;
+}
+
+int Bst::count() {
+    return c_size;
 }
