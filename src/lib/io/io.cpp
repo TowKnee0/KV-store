@@ -39,18 +39,9 @@ int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
         // We are going to process the data for a new page so we need to clear recent buffer which might contain old values.
         memset(buffer, 0, PAGE_SIZE);
 
-        // We need to know whether we can fill this buffer all the way or if we can partially fill it.
+        // We need to know whether we can fill this buffer all the way or if we would only be able to partially fill it.
         int remaining_pairs = data_size - current_idx;
-        int pairs_in_this_page;
-        
-        // Case 1: Defecit
-        if (remaining_pairs < MAX_PAIRS) {
-            pairs_in_this_page = remaining_pairs;
-        }
-        // Case 2: Excess
-        else {
-            pairs_in_this_page = MAX_PAIRS;
-        }
+        int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
 
         // Populate the buffer
         for (int i = 0; i < pairs_in_this_page; i++) {
@@ -64,6 +55,7 @@ int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
             memcpy(buffer + offset + sizeof(int), &current_pair.second, sizeof(int));
         }
 
+        // Move to the next set of data
         current_idx += pairs_in_this_page;
 
         // Write the entire buffer to the file and handle errors.
