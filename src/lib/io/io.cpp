@@ -29,13 +29,14 @@ int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
     }
 
     // Since we need to each page in bulk to minimize I/O operations, we will use a buffer to write the data in multiples of the page size.
+    // The buffer will contain the data for the most recent page.
     char buffer[PAGE_SIZE]; 
 
     // Pointer to keep track of how much of the data has been processed so far.
     int current_idx = 0;
 
     while (current_idx < data_size) {
-        // We are going to construct the data in a new page so we need to clear the previous buffer.
+        // We are going to process the data for a new page so we need to clear recent buffer which might contain old values.
         memset(buffer, 0, PAGE_SIZE);
 
         // We need to know whether we can fill this buffer all the way or if we can partially fill it.
@@ -51,18 +52,19 @@ int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
             pairs_in_this_page = MAX_PAIRS;
         }
 
-        // Populate the buffer which represents the data in the current page.
+        // Populate the buffer
         for (int i = 0; i < pairs_in_this_page; i++) {
-            const pair<int, int> current_pair = data[current_idx];
+            const pair<int, int> current_pair = data[current_idx + i];
 
             // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair we need to write at an offset of i * PAIR_SIZE.
             int offset = i * PAIR_SIZE;
 
-            // Copy the key & value into the buffer
+            // Copy the key & value into the buffer.
             memcpy(buffer + offset, &current_pair.first, sizeof(int));
             memcpy(buffer + offset + sizeof(int), &current_pair.second, sizeof(int));
-            current_idx++;
         }
+
+        current_idx += pairs_in_this_page;
 
         // Write the entire buffer to the file and handle errors.
         if (!out.write(buffer, PAGE_SIZE)) {
