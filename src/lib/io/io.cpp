@@ -17,14 +17,20 @@ const int PAGE_SIZE = 4096; // 4KB page size.
 const int PAIR_SIZE = sizeof(int) * 2; // Size of one key-value pair (2 integers).
 const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum amount of pairs that can be stored in a page.
 
-int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
+// Helper function
+string constructFilePath(const string dbname, const string filename) {
+    return "../data/" + dbname + "/" + filename; // Construct the relative path.
+}
+
+int writeToFile(const string dbname, const string filename, const vector<pair<int, int>>& data) {
+    string fullPath = constructFilePath(dbname, filename);
     int data_size = data.size(); 
     
-    ofstream out(filename, ios_base::binary);
+    ofstream out(fullPath, ios_base::binary);
     
     // Handle error opening file.
     if (!out) {
-        remove(filename.c_str());
+        remove(fullPath.c_str());
         return -1;
     }
 
@@ -63,7 +69,7 @@ int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
         // Write the entire buffer to the file and handle errors.
         if (!out.write(buffer, PAGE_SIZE)) {
             out.close();
-            remove(filename.c_str());
+            remove(fullPath.c_str());
             return -1;
         }
     }
@@ -73,8 +79,9 @@ int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
     return 1;
 }
 
-optional<vector<pair<int, int>>> readPageFromFile(const string filename, int pageNumber) {
-    ifstream in(filename, ios_base::binary);
+optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber) {
+    string fullPath = constructFilePath(dbname, filename);
+    ifstream in(fullPath, ios_base::binary);
     
     // pageNumber is 1-indexed
     size_t offset = (pageNumber - 1) * PAGE_SIZE;
