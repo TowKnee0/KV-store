@@ -46,13 +46,15 @@ int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
         // Populate the buffer
         for (int i = 0; i < pairs_in_this_page; i++) {
             const pair<int, int> current_pair = data[current_idx + i];
+            int current_key = current_pair.first;
+            int current_value = current_pair.first;
 
             // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair we need to write at an offset of i * PAIR_SIZE.
             int offset = i * PAIR_SIZE;
 
             // Copy the key & value into the buffer.
-            memcpy(buffer + offset, &current_pair.first, sizeof(int));
-            memcpy(buffer + offset + sizeof(int), &current_pair.second, sizeof(int));
+            memcpy(&buffer[offset], &current_key, sizeof(int));
+            memcpy(&buffer[offset + 1 * sizeof(int)], &current_value, sizeof(int));
         }
 
         // Move to the next set of data
