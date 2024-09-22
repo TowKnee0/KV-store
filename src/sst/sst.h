@@ -12,8 +12,6 @@
 
 using namespace std;
 
-enum ErrorCode {SUCCESS, WRITE_FAILURE};
-
 struct entry {
     int key;
     int value;
@@ -25,7 +23,7 @@ class SST {
         string dbname;
     public:
         SST(string filename, string dbname); // The SST should be assigned a unique name.
-        ErrorCode write(const vector<pair<int, int>>& data);
+        int write(const vector<pair<int, int>>& data);
         optional<int> get(int key); // Search the corresponding value for this key.
         vector<entry>* scan(int rangeStart, int rangeEnd); // Return all currently existing key-value pairs (as entry struct) that are in the given target range
 };

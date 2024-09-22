@@ -21,7 +21,7 @@ void Db1::write_memtable() {
 }
 
 void Db1::put(int key, int value) {
-    if (memtable->put(key, value) == TREE_FULL) {
+    if (memtable->put(key, value) == EXIT_FAILURE) {
         write_memtable();
         memtable->put(key, value);
     }

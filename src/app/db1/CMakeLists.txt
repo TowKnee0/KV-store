@@ -1,0 +1,1 @@
+add_library(db1 db1.cpp)
