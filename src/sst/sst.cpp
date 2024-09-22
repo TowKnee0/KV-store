@@ -11,7 +11,7 @@ Sst::Sst(string filename, string dbname) {
 }
 
 int Sst::write(const vector<pair<int, int>>& data) {
-    if (writeToFile(filename, data) == -1) {
+    if (writeToFile(dbname, filename, data) == -1) {
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
