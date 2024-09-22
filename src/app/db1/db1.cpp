@@ -13,7 +13,7 @@ void Db1::write_memtable() {
     vector<pair<int, int>> data = memtable->inOrder();
 
     num_sst++;
-    unique_ptr<SST> s = make_unique<SST>(to_string(num_sst), name);
+    unique_ptr<Sst> s = make_unique<Sst>(to_string(num_sst), name);
         
     s->write(data);
     sst.push_back(move(s));

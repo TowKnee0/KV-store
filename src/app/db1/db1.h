@@ -12,7 +12,7 @@ class Db1 : public Db {
         unique_ptr<Bst> memtable;
         
         int num_sst;
-        vector<unique_ptr<SST>> sst;
+        vector<unique_ptr<Sst>> sst;
 
         void write_memtable();
 
