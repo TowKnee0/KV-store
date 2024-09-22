@@ -92,46 +92,57 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
 }
 
 optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber) {
+    // Calculate the memory address for the page
+    size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
     string fullPath = constructFilePath(dbname, filename);
-    ifstream in(fullPath, ios_base::binary);
-
-    // pageNumber is 1-indexed
-    size_t offset = (pageNumber - 1) * PAGE_SIZE;
-
-    in.seekg(offset);
-
-    // Check if the seek was unsuccessful.
-    if (in.fail()) {
-        return nullopt; 
+    int fd = open(fullPath.c_str(), O_DIRECT | O_RDONLY);
+    
+    if (fd < 0) {
+        return nullopt; // Handle error (file doesn't exist or can't be opened)
     }
 
-    // Create a buffer to read the entire page
-    char buffer[PAGE_SIZE];
-    in.read(buffer, PAGE_SIZE);
+    // Allocate an aligned buffer for Direct I/O
+    void* buffer;
+    if (posix_memalign(&buffer, PAGE_SIZE, PAGE_SIZE) != 0) {
+        close(fd);
+        return nullopt; // Handle allocation error
+    }
 
+    // Read the page into the aligned buffer and handle error accordingly
+    int bytesRead = pread(fd, buffer, PAGE_SIZE, pageMemoryAddress);
+    int pairsRead = bytesRead / PAIR_SIZE;
+    if (bytesRead < 0) {
+        free(buffer);
+        close(fd);
+        return nullopt; // Handle read error
+    }
 
     vector<pair<int, int>> pairs;
 
-    // Calculate how many pairs we need to process based on the count of bytes read
-    streamsize bytesRead = in.gcount();
-    int pairsRead = bytesRead / PAIR_SIZE;
-
-    // Process the buffer to extract pairs
+    // Extract non-null pairs
     for (int i = 0; i < pairsRead; ++i) {
         pair<int, int> current_pair;
 
         // Calculate the offset in the buffer
         int pairOffset = i * PAIR_SIZE;
 
-        // Copy the key and value from the buffer into the current_pair
-        if (buffer[pairOffset] != '\0' && buffer[pairOffset + sizeof(int)] != '\0') {
-            memcpy(&current_pair.first, &buffer[pairOffset], sizeof(int));
-            memcpy(&current_pair.second, &buffer[pairOffset + sizeof(int)], sizeof(int));
+        // Careful pointer arithmetic to get the memory address of the key / value for the current pair
+        char* keyPtr = static_cast<char*>(buffer) + pairOffset;
+        char* valuePtr = static_cast<char*>(buffer) + pairOffset + sizeof(int);
+
+        if (*keyPtr != '\0' && *valuePtr != '\0') {
+            pair<int, int> current_pair;
+
+            // Copy the key and value into the current_pair
+            memcpy(&current_pair.first, keyPtr, sizeof(int));
+            memcpy(&current_pair.second, valuePtr, sizeof(int));
+
             pairs.push_back(current_pair);
         }
     }
 
-    in.close();
+    free(buffer);
+    close(fd);
     return pairs; // Return the read key-value pairs.
 }
 
