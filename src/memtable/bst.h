@@ -39,6 +39,7 @@ class Bst {
         optional<int> get(int key);
 
         vector<pair<int, int>> inOrder();
+        void clear();
 };
 
 #endif

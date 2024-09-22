@@ -1,16 +1,25 @@
 #include "../db.h"
 #include "../../memtable/bst.h"
 #include "../../sst/sst.h"
+#include <memory>
+
+using namespace std;
 
 class Db1 : public Db {
     private:
-        Bst memtable;
-        vector<SST> sst;
+        string name;
+        int memtable_size;
+        unique_ptr<Bst> memtable;
+        
+        int num_sst;
+        vector<unique_ptr<SST>> sst;
 
-    public: 
-        void open(string name) const = 0;
-        void put(int key, int value) const = 0;
-        optional<int> get(int key) const = 0;
-        vector<pair<int, int>> scan(int key1, int key2) const = 0;
-        void close() const = 0;
+    // TODO: check which of these can be shared and put it as non-virtual in ../db.h
+    public:
+        Db1(int memtable_size);
+        void open(string name);
+        void put(int key, int value);
+        optional<int> get(int key);
+        vector<pair<int, int>> scan(int key1, int key2);
+        void close();
 };

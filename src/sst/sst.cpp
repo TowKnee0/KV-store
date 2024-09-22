@@ -5,11 +5,16 @@
 
 using namespace std;
 
-SST::SST(const vector<pair<int, int>>& data, string filename) {
+SST::SST(string filename, string dbname) {
     filename = filename;
+    dbname = dbname;
+}
+
+ErrorCode SST::write(const vector<pair<int, int>>& data) {
     if (writeToFile(filename, data) == -1) {
-        throw ios_base::failure("Failed to write to file " + filename);
+        return WRITE_FAILURE;
     }
+    return SUCCESS;
 }
 
 optional<int> SST::get(int key){}

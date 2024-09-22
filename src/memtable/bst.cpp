@@ -165,3 +165,8 @@ void Bst::inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>& v) {
     v.push_back(make_pair(c->key, c->value));
     inOrderHelper(c->right, v);
 }
+
+void Bst::clear() {
+    root = nullptr;
+    c_size = 0;
+}
