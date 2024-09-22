@@ -170,3 +170,7 @@ void Bst::clear() {
     root = nullptr;
     c_size = 0;
 }
+
+int Bst::count() {
+    return c_size;
+}

@@ -14,6 +14,8 @@ class Db1 : public Db {
         int num_sst;
         vector<unique_ptr<SST>> sst;
 
+        void write_memtable();
+
     // TODO: check which of these can be shared and put it as non-virtual in ../db.h
     public:
         Db1(int memtable_size);
