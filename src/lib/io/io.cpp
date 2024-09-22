@@ -44,7 +44,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
             return -1;
     }
 
-    // Allocate PAGE_SIZE aligned memory for Direct I/O.
+    // Allocate memory that is aligned to PAGE_SIZE for Direct I/O.
     void *alignedMemory;
     if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0) {
         close(fd);
@@ -56,7 +56,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
 
     // Write 1 page at a time to disk
     while (current_idx < data_size) {
-        memset(alignedMemory, 0, PAGE_SIZE);
+        memset(alignedMemory, '\0', PAGE_SIZE);
         int remaining_pairs = data_size - current_idx;
         int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
         int bytes_to_write = pairs_in_this_page * PAIR_SIZE;
@@ -75,7 +75,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
          */
         // Write at the start of the page
         int pageAddress = (current_idx / MAX_PAIRS) * PAGE_SIZE;
-        if (pwrite(fd, alignedMemory, bytes_to_write, pageAddress) < 0) {
+        if (pwrite(fd, alignedMemory, PAGE_SIZE, pageAddress) < 0) {
             free(alignedMemory);
             close(fd);
             remove(fullPath.c_str());
@@ -124,9 +124,11 @@ optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const str
         int pairOffset = i * PAIR_SIZE;
 
         // Copy the key and value from the buffer into the current_pair
-        memcpy(&current_pair.first, &buffer[pairOffset], sizeof(int));
-        memcpy(&current_pair.second, &buffer[pairOffset + sizeof(int)], sizeof(int));
-        pairs.push_back(current_pair);
+        if (buffer[pairOffset] != '\0' && buffer[pairOffset + sizeof(int)] != '\0') {
+            memcpy(&current_pair.first, &buffer[pairOffset], sizeof(int));
+            memcpy(&current_pair.second, &buffer[pairOffset + sizeof(int)], sizeof(int));
+            pairs.push_back(current_pair);
+        }
     }
 
     in.close();
