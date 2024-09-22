@@ -50,14 +50,13 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
         close(fd);
         return -1;
     }
-
-     int current_idx = 0;
+    
+    // Represents how many pairs we have processed so far
+    int current_idx = 0;
 
     // Write 1 page at a time to disk
     while (current_idx < data_size) {
         memset(alignedMemory, 0, PAGE_SIZE);
-        int pageCurrentIdxBelongsTo = (current_idx / MAX_PAIRS);
-        int byteLocationToWriteTo = pageCurrentIdxBelongsTo * PAGE_SIZE;
         int remaining_pairs = data_size - current_idx;
         int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
         int bytes_to_write = pairs_in_this_page * PAIR_SIZE;
@@ -70,8 +69,13 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
             memcpy(static_cast<char*>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
         }
 
-        // Handle error
-        if (pwrite(fd, alignedMemory, PAGE_SIZE, byteLocationToWriteTo) < 0) {
+        /**
+         * Which page are we on: current_idx / MAX_PAIRS
+         * Which byte address is this page aligned to: (current_idx / MAX_PAIRS) * PAGE_SIZE
+         */
+        // Write at the start of the page
+        int pageAddress = (current_idx / MAX_PAIRS) * PAGE_SIZE;
+        if (pwrite(fd, alignedMemory, bytes_to_write, pageAddress) < 0) {
             free(alignedMemory);
             close(fd);
             remove(fullPath.c_str());
@@ -137,7 +141,7 @@ int main() {
 
     // Generate a large dataset to write
     vector<pair<int, int>> data;
-    for (int i = 1; i <= 3000; ++i) {
+    for (int i = 1; i <= 1; ++i) {
         pair<int, int> newPair = {i, i + 1};
         data.push_back(newPair);
     }
@@ -152,7 +156,7 @@ int main() {
     }
     cout << "Successfully wrote " << data.size() << " pairs to the file." << endl;
 
-    for (int pageNum = 1; pageNum <= 10; pageNum++) {
+    for (int pageNum = 1; pageNum <= 5; pageNum++) {
         cout << "Attempting to read page " << pageNum << " from the file..." << endl;
         optional<vector<pair<int, int>>> readData = readPageFromFile(dbname, filename, pageNum);
         if (!readData) {
