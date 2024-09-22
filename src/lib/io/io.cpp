@@ -2,6 +2,8 @@
 #include<fstream>
 #include <vector>
 #include <utility>
+#include <cstring>
+
 using namespace std;
 
 /**
@@ -11,41 +13,67 @@ using namespace std;
  * If we use plain text we will use up extra space for the delimiters. And the performance is worse anyway. 
  * We will write the information in a binary format to be more performant.
  */
-const int PAGE_SIZE = 4096; // 4KB page size
-const int PAIR_SIZE = sizeof(int) * 2; // Size of one key-value pair (2 integers)
-const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE;
+const int PAGE_SIZE = 4096; // 4KB page size.
+const int PAIR_SIZE = sizeof(int) * 2; // Size of one key-value pair (2 integers).
+const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum amount of pairs that can be stored in a page.
 
 int writeToFile(const string& filename, const vector<pair<int, int>>& data) {
+    int data_size = data.size(); 
+    
     ofstream out(filename, ios_base::binary);
     
-    // Handle error opening file
+    // Handle error opening file.
     if (!out) {
         remove(filename.c_str());
         return -1;
     }
 
+    // Since we need to each page in bulk to minimize I/O operations, we will use a buffer to write the data in multiples of the page size.
+    char buffer[PAGE_SIZE]; 
 
-    // Try to write all key-value pairs
-    bool success = true;
-    for (const pair<int, int>& current_pair : data) {
-        if (!out.write(reinterpret_cast<const char*>(&current_pair.first), sizeof(int))) {
-            success = false;
-            break; 
+    // Pointer to keep track of how much of the data has been processed so far.
+    int current_idx = 0;
+
+    while (current_idx < data_size) {
+        // We are going to construct the data in a new page so we need to clear the previous buffer.
+        memset(buffer, 0, PAGE_SIZE);
+
+        // We need to know whether we can fill this buffer all the way or if we can partially fill it.
+        int remaining_pairs = data_size - current_idx;
+        int pairs_in_this_page;
+        
+        // Case 1: Defecit
+        if (remaining_pairs < MAX_PAIRS) {
+            pairs_in_this_page = remaining_pairs;
         }
-        if (!out.write(reinterpret_cast<const char*>(&current_pair.second), sizeof(int))) {
-            success = false;
-            break;
+        // Case 2: Excess
+        else {
+            pairs_in_this_page = MAX_PAIRS;
+        }
+
+        // Populate the buffer which represents the data in the current page.
+        for (int i = 0; i < pairs_in_this_page; i++) {
+            const pair<int, int> current_pair = data[current_idx];
+
+            // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair we need to write at an offset of i * PAIR_SIZE.
+            int offset = i * PAIR_SIZE;
+
+            // Copy the key & value into the buffer
+            memcpy(buffer + offset, &current_pair.first, sizeof(int));
+            memcpy(buffer + offset + sizeof(int), &current_pair.second, sizeof(int));
+            current_idx++;
+        }
+
+        // Write the entire buffer to the file and handle errors.
+        if (!out.write(buffer, PAGE_SIZE)) {
+            out.close();
+            remove(filename.c_str());
+            return -1;
         }
     }
 
-    out.close(); // Close the file
-
-    // If any write failed, clean up.
-    if (!success) {
-        remove(filename.c_str());
-        return -1;
-    }
-
+    // Success. Close the file after all pages are written.
+    out.close();
     return 1;
 }
 
@@ -57,7 +85,7 @@ optional<vector<pair<int, int>>> readPageFromFile(const string filename, int pag
 
     in.seekg(offset);
     
-     // Check if the seek was successful or if we are at the end of the file
+     // Check if the seek was successful or if we are at the end of the file.
     if (in.fail() || in.eof()) {
         return nullopt; 
     }
@@ -69,12 +97,12 @@ optional<vector<pair<int, int>>> readPageFromFile(const string filename, int pag
         pair<int, int> current_pair;
         in.read(reinterpret_cast<char*>(&current_pair.first), sizeof(int));
         
-        // Stop reading if we hit the end of the file
+        // Stop reading if we hit the end of the file.
         if (in.eof()) {
             break;
         }
         
-        // Read value
+        // Read value.
         in.read(reinterpret_cast<char*>(&current_pair.second), sizeof(int));
 
         if (in.eof()) {
@@ -85,5 +113,5 @@ optional<vector<pair<int, int>>> readPageFromFile(const string filename, int pag
     }
 
     in.close();
-    return pairs; // Return the read key-value pairs
+    return pairs; // Return the read key-value pairs.
 }
