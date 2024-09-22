@@ -3,6 +3,8 @@
 #include <vector>
 #include <utility>
 #include <cstring>
+#include <iostream>
+#include <filesystem>
 
 using namespace std;
 
@@ -24,6 +26,11 @@ string constructFilePath(const string dbname, const string filename) {
 
 int writeToFile(const string dbname, const string filename, const vector<pair<int, int>>& data) {
     string fullPath = constructFilePath(dbname, filename);
+     // Create the directory if it doesn't exist. ofstream automatically creates the physical file.
+    filesystem::path dirPath = filesystem::path(fullPath).parent_path();
+    if (!filesystem::exists(dirPath)) {
+        filesystem::create_directories(dirPath);
+    }
     int data_size = data.size(); 
     
     ofstream out(fullPath, ios_base::binary);
@@ -43,7 +50,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
 
     while (current_idx < data_size) {
         // We are going to process the data for a new page so we need to clear recent buffer which might contain old values.
-        memset(buffer, 0, PAGE_SIZE);
+        memset(buffer, '\0', PAGE_SIZE);
 
         // We need to know whether we can fill this buffer all the way or if we would only be able to partially fill it.
         int remaining_pairs = data_size - current_idx;
@@ -53,7 +60,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
         for (int i = 0; i < pairs_in_this_page; i++) {
             const pair<int, int> current_pair = data[current_idx + i];
             int current_key = current_pair.first;
-            int current_value = current_pair.first;
+            int current_value = current_pair.second;
 
             // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair we need to write at an offset of i * PAIR_SIZE.
             int offset = i * PAIR_SIZE;
@@ -66,8 +73,11 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
         // Move to the next set of data
         current_idx += pairs_in_this_page;
 
+        // Calculate the number of bytes to write for this page
+        int bytes_to_write = pairs_in_this_page * PAIR_SIZE;
+
         // Write the entire buffer to the file and handle errors.
-        if (!out.write(buffer, PAGE_SIZE)) {
+        if (!out.write(buffer, bytes_to_write)) {
             out.close();
             remove(fullPath.c_str());
             return -1;
@@ -117,4 +127,45 @@ optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const str
 
     in.close();
     return pairs; // Return the read key-value pairs.
+}
+
+int main() {
+    // Sample database and filename
+    string dbname = "test_db";
+    string filename = "datafile.bin";
+
+    // Generate a large dataset to write
+    vector<pair<int, int>> data;
+    for (int i = 1; i <= 1000; ++i) {
+        pair<int, int> newPair = {i, i + 1};
+        data.push_back(newPair);
+    }
+
+    cout << "Starting the write operation..." << endl;
+
+    // Write the sample data to the file
+    int writeResult = writeToFile(dbname, filename, data);
+    if (writeResult == -1) {
+        cout << "Error writing to file." << endl;
+        return 1;
+    }
+    cout << "Successfully wrote " << data.size() << " pairs to the file." << endl;
+
+    for (int pageNum = 1; pageNum <= 5; pageNum++) {
+        cout << "Attempting to read page " << pageNum << " from the file..." << endl;
+        optional<vector<pair<int, int>>> readData = readPageFromFile(dbname, filename, pageNum);
+        if (!readData) {
+            cout << "Error reading from page " << pageNum << " of the file." << endl;
+            continue;
+        }
+
+        // Output the read data
+        cout << "Reading page " << pageNum << " with an observed size of " << readData->size() << endl;
+        for (const auto& pair : *readData) {
+            cout << "Key: " << pair.first << ", Value: " << pair.second << endl;
+        }
+        cout << "Finished reading from page " << pageNum << "." << endl;
+    }
+
+    return 0;
 }
