@@ -2,9 +2,12 @@
 #include<fstream>
 #include <vector>
 #include <utility>
-#include <cstring>
+#include <cstring> 
 #include <iostream>
 #include <filesystem>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -25,68 +28,63 @@ string constructFilePath(const string dbname, const string filename) {
 }
 
 int writeToFile(const string dbname, const string filename, const vector<pair<int, int>>& data) {
+     // Create the directory if it doesn't exist.
     string fullPath = constructFilePath(dbname, filename);
-     // Create the directory if it doesn't exist. ofstream automatically creates the physical file.
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
     if (!filesystem::exists(dirPath)) {
         filesystem::create_directories(dirPath);
     }
+    
     int data_size = data.size(); 
     
-    ofstream out(fullPath, ios_base::binary);
-    
-    // Handle error opening file.
-    if (!out) {
+    // Create the file if it doesn't exist already and prepare it for Direct I/O + Write Only Access.
+    int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY | O_TRUNC, 0644);
+    if (fd < 0) {
         remove(fullPath.c_str());
+            return -1;
+    }
+
+    // Allocate PAGE_SIZE aligned memory for Direct I/O.
+    void *alignedMemory;
+    if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0) {
+        close(fd);
         return -1;
     }
 
-    // Since we need to each page in bulk to minimize I/O operations, we will use a buffer to write the data in multiples of the page size.
-    // The buffer will contain the data for the most recent page.
-    char buffer[PAGE_SIZE]; 
+     int current_idx = 0;
 
-    // Pointer to keep track of how much of the data has been processed so far.
-    int current_idx = 0;
-
+    // Write 1 page at a time to disk
     while (current_idx < data_size) {
-        // We are going to process the data for a new page so we need to clear recent buffer which might contain old values.
-        memset(buffer, '\0', PAGE_SIZE);
-
-        // We need to know whether we can fill this buffer all the way or if we would only be able to partially fill it.
+        memset(alignedMemory, 0, PAGE_SIZE);
+        int pageCurrentIdxBelongsTo = (current_idx / MAX_PAIRS);
+        int byteLocationToWriteTo = pageCurrentIdxBelongsTo * PAGE_SIZE;
         int remaining_pairs = data_size - current_idx;
         int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
+        int bytes_to_write = pairs_in_this_page * PAIR_SIZE;
 
-        // Populate the buffer
+        // Put the current pair we are looking at inside the aligned memory at the correct position
+        // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair within a page we need to write at an offset of i * PAIR_SIZE.
         for (int i = 0; i < pairs_in_this_page; i++) {
             const pair<int, int> current_pair = data[current_idx + i];
-            int current_key = current_pair.first;
-            int current_value = current_pair.second;
-
-            // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair we need to write at an offset of i * PAIR_SIZE.
             int offset = i * PAIR_SIZE;
+            memcpy(static_cast<char*>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
+        }
 
-            // Copy the key & value into the buffer.
-            memcpy(&buffer[offset], &current_key, sizeof(int));
-            memcpy(&buffer[offset + 1 * sizeof(int)], &current_value, sizeof(int));
+        // Handle error
+        if (pwrite(fd, alignedMemory, PAGE_SIZE, byteLocationToWriteTo) < 0) {
+            free(alignedMemory);
+            close(fd);
+            remove(fullPath.c_str());
+            return -1;
         }
 
         // Move to the next set of data
         current_idx += pairs_in_this_page;
-
-        // Calculate the number of bytes to write for this page
-        int bytes_to_write = pairs_in_this_page * PAIR_SIZE;
-
-        // Write the entire buffer to the file and handle errors.
-        if (!out.write(buffer, bytes_to_write)) {
-            out.close();
-            remove(fullPath.c_str());
-            return -1;
-        }
     }
 
-    // Success. Close the file after all pages are written.
-    out.close();
-    return 1;
+    free(alignedMemory);
+    close(fd);
+    return 1; 
 }
 
 optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber) {
