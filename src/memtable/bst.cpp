@@ -61,7 +61,7 @@ void Bst::rightRotate(shared_ptr<node> y) {
 }
 
 int Bst::put(int key, int value) {
-    if (c_size == max_size) {
+    if (c_size >= max_size) {
         return EXIT_FAILURE;
     }
 

@@ -47,6 +47,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
     if (fd < 0)
     {
         remove(fullPath.c_str());
+        cout << "fd < 0" << endl;
         return -1;
     }
 
@@ -55,6 +56,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
     if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0)
     {
         close(fd);
+        cout << "posix_memalign != 0" << endl;
         return -1;
     }
 
@@ -100,6 +102,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
             free(alignedMemory);
             close(fd);
             remove(fullPath.c_str());
+            cout << "prwite  < 0" << endl;
             return -1;
         }
 
