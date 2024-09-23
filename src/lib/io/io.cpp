@@ -24,12 +24,14 @@ const int PAIR_SIZE = sizeof(int) * 2; // Size of one key-value pair (2 integers
 const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum number of pairs that can be stored in a page.
 const int TOMBSTONE_VALUE = INT_MIN; // Special value to indicate an empty key / value.
 
+IOHandler::IOHandler(const string dbname) : dbname(dbname) {}
+
 // Helper function
 string constructFilePath(const string dbname, const string filename){
     return "../data/" + dbname + "/" + filename; // Construct the relative path.
 }
 
-int writeToFile(const string dbname, const string filename, const vector<pair<int, int>>& data) {
+int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& data) {
      // Create the directory if it doesn't exist.
     string fullPath = constructFilePath(dbname, filename);
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
@@ -102,7 +104,7 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
     return 1; 
 }
 
-optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber) {
+optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filename, int pageNumber) {
     // Calculate the memory address for the page
     size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
     string fullPath = constructFilePath(dbname, filename);
@@ -154,4 +156,48 @@ optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const str
     free(buffer);
     close(fd);
     return pairs; // Return the read key-value pairs.
+}
+
+int main() {
+    // Sample database and filename
+    string dbname = "test2_db";
+    string filename = "datafile.bin";
+
+    // Create an instance of IOHandler
+    IOHandler ioHandler(dbname);
+
+    // Generate a large dataset to write
+    vector<pair<int, int>> data;
+    for (int i = 1; i <= 514; ++i) {
+        pair<int, int> newPair = {i, i + 1};
+        data.push_back(newPair);
+    }
+
+    cout << "Starting the write operation..." << endl;
+
+    // Write the sample data to the file
+    int writeResult = ioHandler.writeToFile(filename, data);
+    if (writeResult == -1) {
+        cout << "Error writing to file." << endl;
+        return 1;
+    }
+    cout << "Successfully wrote " << data.size() << " pairs to the file." << endl;
+
+    for (int pageNum = 1; pageNum <= 5; pageNum++) {
+        cout << "Attempting to read page " << pageNum << " from the file..." << endl;
+        optional<vector<pair<int, int>>> readData = ioHandler.readPageFromFile(filename, pageNum);
+        if (!readData) {
+            cout << "Error reading from page " << pageNum << " of the file." << endl;
+            continue;
+        }
+
+        // Output the read data
+        cout << "Reading page " << pageNum << " with an observed size of " << readData->size() << endl;
+        for (const auto& pair : *readData) {
+            cout << "Key: " << pair.first << ", Value: " << pair.second << endl;
+        }
+        cout << "Finished reading from page " << pageNum << "." << endl;
+    }
+
+    return 0;
 }
