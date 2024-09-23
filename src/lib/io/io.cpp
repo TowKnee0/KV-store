@@ -171,3 +171,6 @@ optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const str
     close(fd);
     return pairs; // Return the read key-value pairs.
 }
+
+vector<string> getDbFilenames(const string dbname) { return {}; };
+int numPagesInFile(const string dbname, const string filename) { return -1; };
