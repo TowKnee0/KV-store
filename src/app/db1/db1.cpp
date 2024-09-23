@@ -32,6 +32,7 @@ void Db1::write_memtable()
     unique_ptr<Sst> s = make_unique<Sst>(to_string(num_sst), name);
 
     if (s->write(data) == EXIT_FAILURE){
+        throw runtime_error("memtable write failed");
     };
     sst.push_back(move(s));
     memtable->clear();
