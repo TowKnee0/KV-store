@@ -5,6 +5,10 @@
 #include <cstring>
 #include <iostream>
 #include <filesystem>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <climits>
 
 using namespace std;
 
@@ -17,7 +21,8 @@ using namespace std;
  */
 const int PAGE_SIZE = 4096;                  // 4KB page size.
 const int PAIR_SIZE = sizeof(int) * 2;       // Size of one key-value pair (2 integers).
-const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum amount of pairs that can be stored in a page.
+const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum number of pairs that can be stored in a page.
+const int TOMBSTONE_VALUE = INT_MIN;         // Special value to indicate an empty key / value.
 
 // Helper function
 string constructFilePath(const string dbname, const string filename)
@@ -27,159 +32,142 @@ string constructFilePath(const string dbname, const string filename)
 
 int writeToFile(const string dbname, const string filename, const vector<pair<int, int>> &data)
 {
+    // Create the directory if it doesn't exist.
     string fullPath = constructFilePath(dbname, filename);
-    // Create the directory if it doesn't exist. ofstream automatically creates the physical file.
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
     if (!filesystem::exists(dirPath))
     {
         filesystem::create_directories(dirPath);
     }
+
     int data_size = data.size();
 
-    ofstream out(fullPath, ios_base::binary);
-
-    // Handle error opening file.
-    if (!out)
+    // Create the file if it doesn't exist already and prepare it for Direct I/O + Write Only Access.
+    int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY | O_TRUNC, 0644);
+    if (fd < 0)
     {
         remove(fullPath.c_str());
         return -1;
     }
 
-    // Since we need to each page in bulk to minimize I/O operations, we will use a buffer to write the data in multiples of the page size.
-    // The buffer will contain the data for the most recent page.
-    char buffer[PAGE_SIZE];
+    // Allocate memory that is aligned to PAGE_SIZE for Direct I/O.
+    void *alignedMemory;
+    if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0)
+    {
+        close(fd);
+        return -1;
+    }
 
-    // Pointer to keep track of how much of the data has been processed so far.
+    // Represents how many pairs we have processed so far
     int current_idx = 0;
 
+    // Write 1 page at a time to disk
     while (current_idx < data_size)
     {
-        // We are going to process the data for a new page so we need to clear recent buffer which might contain old values.
-        memset(buffer, '\0', PAGE_SIZE);
-
-        // We need to know whether we can fill this buffer all the way or if we would only be able to partially fill it.
+        memset(alignedMemory, '\0', PAGE_SIZE);
         int remaining_pairs = data_size - current_idx;
         int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
+        int bytes_to_write = pairs_in_this_page * PAIR_SIZE;
 
-        // Populate the buffer
+        // Put the current pair we are looking at inside the aligned memory at the correct position
+        // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair within a page we need to write at an offset of i * PAIR_SIZE.
         for (int i = 0; i < pairs_in_this_page; i++)
         {
             const pair<int, int> current_pair = data[current_idx + i];
-            int current_key = current_pair.first;
-            int current_value = current_pair.second;
-
-            // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair we need to write at an offset of i * PAIR_SIZE.
             int offset = i * PAIR_SIZE;
+            memcpy(static_cast<char *>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
+        }
 
-            // Copy the key & value into the buffer.
-            memcpy(&buffer[offset], &current_key, sizeof(int));
-            memcpy(&buffer[offset + 1 * sizeof(int)], &current_value, sizeof(int));
+        // When there are pairs present than the maximum capacity of the page we will it with ignore values
+        if (pairs_in_this_page < MAX_PAIRS)
+        {
+            for (int i = pairs_in_this_page; i < MAX_PAIRS; i++)
+            {
+                pair<int, int> tombstone = {TOMBSTONE_VALUE, TOMBSTONE_VALUE};
+                int offset = i * PAIR_SIZE;
+                memcpy(static_cast<char *>(alignedMemory) + offset, &tombstone, PAIR_SIZE);
+            }
+        }
+
+        /**
+         * Which page are we on: current_idx / MAX_PAIRS
+         * Which byte address is this page aligned to: (current_idx / MAX_PAIRS) * PAGE_SIZE
+         */
+        // Write at the start of the page
+        int pageAddress = (current_idx / MAX_PAIRS) * PAGE_SIZE;
+        if (pwrite(fd, alignedMemory, PAGE_SIZE, pageAddress) < 0)
+        {
+            free(alignedMemory);
+            close(fd);
+            remove(fullPath.c_str());
+            return -1;
         }
 
         // Move to the next set of data
         current_idx += pairs_in_this_page;
-
-        // Calculate the number of bytes to write for this page
-        int bytes_to_write = pairs_in_this_page * PAIR_SIZE;
-
-        // Write the entire buffer to the file and handle errors.
-        if (!out.write(buffer, bytes_to_write))
-        {
-            out.close();
-            remove(fullPath.c_str());
-            return -1;
-        }
     }
 
-    // Success. Close the file after all pages are written.
-    out.close();
+    free(alignedMemory);
+    close(fd);
     return 1;
 }
 
 optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber)
 {
+    // Calculate the memory address for the page
+    size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
     string fullPath = constructFilePath(dbname, filename);
-    ifstream in(fullPath, ios_base::binary);
+    int fd = open(fullPath.c_str(), O_DIRECT | O_RDONLY);
 
-    // pageNumber is 1-indexed
-    size_t offset = (pageNumber - 1) * PAGE_SIZE;
-
-    in.seekg(offset);
-
-    // Check if the seek was unsuccessful.
-    if (in.fail())
+    if (fd < 0)
     {
-        return nullopt;
+        return nullopt; // Handle error (file doesn't exist or can't be opened)
     }
 
-    // Create a buffer to read the entire page
-    char buffer[PAGE_SIZE];
-    in.read(buffer, PAGE_SIZE);
+    // Allocate an aligned buffer for Direct I/O
+    void *buffer;
+    if (posix_memalign(&buffer, PAGE_SIZE, PAGE_SIZE) != 0)
+    {
+        close(fd);
+        return nullopt; // Handle allocation error
+    }
+
+    // Read the page into the aligned buffer and handle error accordingly
+    int bytesRead = pread(fd, buffer, PAGE_SIZE, pageMemoryAddress);
+    int pairsRead = bytesRead / PAIR_SIZE;
+    if (bytesRead < 0)
+    {
+        free(buffer);
+        close(fd);
+        return nullopt; // Handle read error
+    }
 
     vector<pair<int, int>> pairs;
 
-    // Calculate how many pairs we need to process based on the count of bytes read
-    streamsize bytesRead = in.gcount();
-    int pairsRead = bytesRead / PAIR_SIZE;
-
-    // Process the buffer to extract pairs
+    // Extract non-tombstone pairs
     for (int i = 0; i < pairsRead; ++i)
     {
-        pair<int, int> current_pair;
-
         // Calculate the offset in the buffer
         int pairOffset = i * PAIR_SIZE;
 
-        // Copy the key and value from the buffer into the current_pair
-        memcpy(&current_pair.first, &buffer[pairOffset], sizeof(int));
-        memcpy(&current_pair.second, &buffer[pairOffset + sizeof(int)], sizeof(int));
+        // Careful pointer arithmetic to get the memory address of the key / value for the current pair
+        char *keyPtr = static_cast<char *>(buffer) + pairOffset;
+        char *valuePtr = static_cast<char *>(buffer) + pairOffset + sizeof(int);
+
+        // Skip tombstone values (dereference before comparison)
+        if (*(int *)keyPtr == TOMBSTONE_VALUE && *(int *)valuePtr == TOMBSTONE_VALUE)
+        {
+            continue;
+        }
+
+        // Copy the key and value into the current_pair
+        pair<int, int> current_pair;
+        memcpy(&current_pair.first, keyPtr, sizeof(int));
+        memcpy(&current_pair.second, valuePtr, sizeof(int));
         pairs.push_back(current_pair);
     }
 
-    in.close();
+    free(buffer);
+    close(fd);
     return pairs; // Return the read key-value pairs.
 }
-
-int numPagesInFile(const string dbname, const string filename) { return 0; };
-
-// // TODO: Delete this
-// int main() {
-//     // Sample database and filename
-//     string dbname = "test_db";
-//     string filename = "datafile.bin";
-
-//     // Generate a large dataset to write
-//     vector<pair<int, int>> data;
-//     for (int i = 1; i <= 3000; ++i) {
-//         pair<int, int> newPair = {i, i + 1};
-//         data.push_back(newPair);
-//     }
-
-//     cout << "Starting the write operation..." << endl;
-
-//     // Write the sample data to the file
-//     int writeResult = writeToFile(dbname, filename, data);
-//     if (writeResult == -1) {
-//         cout << "Error writing to file." << endl;
-//         return 1;
-//     }
-//     cout << "Successfully wrote " << data.size() << " pairs to the file." << endl;
-
-//     for (int pageNum = 1; pageNum <= 10; pageNum++) {
-//         cout << "Attempting to read page " << pageNum << " from the file..." << endl;
-//         optional<vector<pair<int, int>>> readData = readPageFromFile(dbname, filename, pageNum);
-//         if (!readData) {
-//             cout << "Error reading from page " << pageNum << " of the file." << endl;
-//             continue;
-//         }
-
-//         // Output the read data
-//         cout << "Reading page " << pageNum << " with an observed size of " << readData->size() << endl;
-//         for (const auto& pair : *readData) {
-//             cout << "Key: " << pair.first << ", Value: " << pair.second << endl;
-//         }
-//         cout << "Finished reading from page " << pageNum << "." << endl;
-//     }
-
-//     return 0;
-// }

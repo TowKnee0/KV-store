@@ -1,6 +1,6 @@
 /**
  * If we do I/O in multiple different places we anticipate that we will run into pointer and misalign issues.
- * So we will handle all i/o from a centralized location.
+ * So we will handle all Direct I/O from a centralized location.
  * What we want to support:
  * - Writing to a file
  * - Reading a specific page in a file starting from some offset
