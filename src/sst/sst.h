@@ -9,39 +9,23 @@
 #include <optional>
 #include <vector>
 #include <string>
-#include <memory>
 
 using namespace std;
 
-struct entry
-{
+struct entry {
     int key;
     int value;
 };
 
-class Sst
-{
-private:
-    string filename; // Which file the Sst is stored in
-    string dbname;
-
-public:
-    Sst(string filename, string dbname); // The Sst should be assigned a unique name.
-    int write(const vector<pair<int, int>> &data);
-    optional<int> get(int key); // Search the corresponding value for this key.
-
-    /*
-     * Scans the SST file and returns all key-value pairs that are in the given target range.
-     * The range is exclusive of both endpints.
-     *
-     * Parameters:
-     * - rangeStart: the start of the range (exclusive)
-     * - rangeEnd: the end of the range (exclusive)
-     *
-     * Returns:
-     * - A vector of key-value pairs that are in the given range.
-     */
-    vector<entry> *scan(int rangeStart, int rangeEnd);
+class Sst {
+    private:
+        string filename; // Which file the Sst is stored in
+        string dbname;
+    public:
+        Sst(string filename, string dbname); // The Sst should be assigned a unique name.
+        int write(const vector<pair<int, int>>& data);
+        optional<int> get(int key); // Search the corresponding value for this key.
+        vector<entry>* scan(int rangeStart, int rangeEnd); // Return all currently existing key-value pairs (as entry struct) that are in the given target range
 };
 
 #endif
