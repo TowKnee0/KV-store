@@ -1,5 +1,5 @@
 #include "io.h"
-#include<fstream>
+#include <fstream>
 #include <vector>
 #include <utility>
 #include <cstring> 
@@ -16,7 +16,7 @@ using namespace std;
  * When we write data to a file we will fill it in 4KB pages.
  * Note that key and value are 4-byte integers each, so a key value pair will take up 8-bytes.
  * This suggests each 4KB or 4096byte page can hold up to 4096 / 8 = 512 key value pairs.
- * If we use plain text we will use up extra space for the delimiters. And the performance is worse anyway. 
+ * If we use plain text we will use up extra space for the delimiters. And the performance is worse anyway.
  * We will write the information in a binary format to be more performant.
  */
 const int PAGE_SIZE = 4096; // 4KB page size.
@@ -25,7 +25,7 @@ const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum number of pairs that can
 const int TOMBSTONE_VALUE = INT_MIN; // Special value to indicate an empty key / value.
 
 // Helper function
-string constructFilePath(const string dbname, const string filename) {
+string constructFilePath(const string dbname, const string filename){
     return "../data/" + dbname + "/" + filename; // Construct the relative path.
 }
 

@@ -13,7 +13,7 @@
 #include <vector>
 #include <optional>
 
-using namespace std; 
+using namespace std;
 
 /*
  * Write key-value pairs to a binary file.
@@ -23,23 +23,34 @@ using namespace std;
  *  - filename: the name of the file to write to.
  *  - data: vector of key-value pairs to write into the file named filename.
  */
-int writeToFile(const string dbname, const string filename, const vector<pair<int, int>>& data);
+int writeToFile(const string dbname, const string filename, const vector<pair<int, int>> &data);
 
 /*
  * Read a specific page (4KB) of key-value pairs from a binary file.
  * Returns an vector of the found key-value pairs within the page if successful, or {} if reading fails.
- * 
+ *
  * Parameters:
  *  - the db instance we are interacting with
  *  - filename: the name of the file to read from.
- *  - pageNumber: the page number to read from.
+ *  - pageNumber: the page number to read from. Page numbers are 1-indexed.
  */
 optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber);
 
 /*
- * Get all filenames associated with a specific db instance.
+ * Get the number of pages in a file.
+ * Returns the number of pages in the file if successful, or -1 if reading fails.
+ *
+ * Parameters:
+ *  - dbname: the db instance we are interacting with
+ *  - filename: the name of the file to read from.
+ */
+int numPagesInFile(const string dbname, const string filename);
+
+/*
+ * Get all sst filenames associated with a specific db instance.
  * Returns a vector of filenames if successful, or {} which is the empty vector if no files are found.
- * 
+ * Should be sorted (ie oldest first, newest last).
+ *
  * Parameters:
  *  - dbname: the db instance we are interacting with.
  */
