@@ -36,4 +36,13 @@ int writeToFile(const string dbname, const string filename, const vector<pair<in
  */
 optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber);
 
+/*
+ * Get all filenames associated with a specific db instance.
+ * Returns a vector of filenames if successful, or {} if no files are found.
+ * 
+ * Parameters:
+ *  - dbname: the db instance we are interacting with.
+ */
+vector<string> getDbFilenames(const string dbname);
+
 #endif
