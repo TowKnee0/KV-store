@@ -1,6 +1,10 @@
 #include "db1.h"
 #include "../../lib/io/io.h"
 #include <queue>
+#include <iostream>
+
+using namespace std;
+
 Db1::Db1(int memtable_size)
 {
     memtable_size = memtable_size;
@@ -27,7 +31,8 @@ void Db1::write_memtable()
     num_sst++;
     unique_ptr<Sst> s = make_unique<Sst>(to_string(num_sst), name);
 
-    s->write(data);
+    if (s->write(data) == EXIT_FAILURE){
+    };
     sst.push_back(move(s));
     memtable->clear();
 }

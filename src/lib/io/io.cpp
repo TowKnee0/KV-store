@@ -45,6 +45,7 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
     int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY | O_TRUNC, 0644);
     if (fd < 0) {
         remove(fullPath.c_str());
+        cout << "fd < 0" << endl;
         return -1;
     }
 
@@ -53,6 +54,7 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
     if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0)
     {
         close(fd);
+        cout << "posix_memalign != 0" << endl;
         return -1;
     }
 
@@ -96,6 +98,7 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
             free(alignedMemory);
             close(fd);
             remove(fullPath.c_str());
+            cout << "prwite  < 0" << endl;
             return -1;
         }
 
