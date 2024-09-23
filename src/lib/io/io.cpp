@@ -19,31 +19,33 @@ using namespace std;
  * If we use plain text we will use up extra space for the delimiters. And the performance is worse anyway.
  * We will write the information in a binary format to be more performant.
  */
-const int PAGE_SIZE = 4096; // 4KB page size.
-const int PAIR_SIZE = sizeof(int) * 2; // Size of one key-value pair (2 integers).
+const int PAGE_SIZE = 4096;                  // 4KB page size.
+const int PAIR_SIZE = sizeof(int) * 2;       // Size of one key-value pair (2 integers).
 const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum number of pairs that can be stored in a page.
-const int TOMBSTONE_VALUE = INT_MIN; // Special value to indicate an empty key / value.
-
-IOHandler::IOHandler(const string dbname) : dbname(dbname) {}
+const int TOMBSTONE_VALUE = INT_MIN;         // Special value to indicate an empty key / value.
 
 // Helper function
-string constructFilePath(const string dbname, const string filename){
+string constructFilePath(const string dbname, const string filename)
+{
     return "../data/" + dbname + "/" + filename; // Construct the relative path.
 }
 
-int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& data) {
-     // Create the directory if it doesn't exist.
+int writeToFile(const string dbname, const string filename, const vector<pair<int, int>> &data)
+{
+    // Create the directory if it doesn't exist.
     string fullPath = constructFilePath(dbname, filename);
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
-    if (!filesystem::exists(dirPath)) {
+    if (!filesystem::exists(dirPath))
+    {
         filesystem::create_directories(dirPath);
     }
-    
-    int data_size = data.size(); 
-    
+
+    int data_size = data.size();
+
     // Create the file if it doesn't exist already and prepare it for Direct I/O + Write Only Access.
     int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY | O_TRUNC, 0644);
-    if (fd < 0) {
+    if (fd < 0)
+    {
         remove(fullPath.c_str());
         return -1;
     }
@@ -60,7 +62,8 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
     int current_idx = 0;
 
     // Write 1 page at a time to disk
-    while (current_idx < data_size) {
+    while (current_idx < data_size)
+    {
         memset(alignedMemory, '\0', PAGE_SIZE);
         int remaining_pairs = data_size - current_idx;
         int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
@@ -68,7 +71,8 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
 
         // Put the current pair we are looking at inside the aligned memory at the correct position
         // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair within a page we need to write at an offset of i * PAIR_SIZE.
-        for (int i = 0; i < pairs_in_this_page; i++) {
+        for (int i = 0; i < pairs_in_this_page; i++)
+        {
             const pair<int, int> current_pair = data[current_idx + i];
             int offset = i * PAIR_SIZE;
             memcpy(static_cast<char *>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
@@ -108,13 +112,15 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
     return 1;
 }
 
-optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filename, int pageNumber) {
+optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const string filename, int pageNumber)
+{
     // Calculate the memory address for the page
     size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
     string fullPath = constructFilePath(dbname, filename);
     int fd = open(fullPath.c_str(), O_DIRECT | O_RDONLY);
-    
-    if (fd < 0) {
+
+    if (fd < 0)
+    {
         return nullopt; // Handle error (file doesn't exist or can't be opened)
     }
 
@@ -165,3 +171,6 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
     close(fd);
     return pairs; // Return the read key-value pairs.
 }
+
+vector<string> getDbFilenames(const string dbname) { return {}; };
+int numPagesInFile(const string dbname, const string filename) { return -1; };
