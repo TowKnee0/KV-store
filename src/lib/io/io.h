@@ -38,7 +38,7 @@ optional<vector<pair<int, int>>> readPageFromFile(const string dbname, const str
 
 /*
  * Get all filenames associated with a specific db instance.
- * Returns a vector of filenames if successful, or {} if no files are found.
+ * Returns a vector of filenames if successful, or {} which is the empty vector if no files are found.
  * 
  * Parameters:
  *  - dbname: the db instance we are interacting with.
