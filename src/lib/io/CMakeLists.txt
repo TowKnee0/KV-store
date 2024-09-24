@@ -1,6 +1,6 @@
 add_library(io io.cpp)
 add_executable(io_test io.test.cpp)
-target_link_libraries(io_test PRIVATE io Catch2::Catch2WithMain)
+target_link_libraries(io_test PRIVATE io GTest::gtest_main)
 
-include(Catch)
-catch_discover_tests(io_test)
+include(GoogleTest)
+gtest_discover_tests(io_test)
