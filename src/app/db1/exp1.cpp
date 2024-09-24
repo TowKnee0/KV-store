@@ -5,56 +5,64 @@
 using namespace chrono;
 
 
-int put_time(const unique_ptr<Db>& db, int count) {
-    auto start = high_resolution_clock::now();
-    for (int i = 0; i < count; i++) {
+int count_put(const unique_ptr<Db>& db, seconds s) {
+    auto stop = high_resolution_clock::now() + s;
+    int count = 0;
+    while (high_resolution_clock::now() < stop) {
         db->put(rand(), rand());
+        count++;
     }
-    return duration_cast<microseconds>(high_resolution_clock::now() - start).count();
+    return count;
 } 
 
-int get_time(const unique_ptr<Db>& db, int count) {
-    auto start = high_resolution_clock::now();
-    for (int i = 0; i < count; i++) {
+int count_get(const unique_ptr<Db>& db, seconds s) {
+    auto stop = high_resolution_clock::now() + s;
+    int count = 0;
+    while (high_resolution_clock::now() < stop) {
         db->get(rand()); // latency so doesnt matter if its actually in there or not
+        count++;
     }
-    return duration_cast<microseconds>(high_resolution_clock::now() - start).count();
+    return count;
 }
 
-int scan_time(const unique_ptr<Db>& db, int count) {
+int count_scan(const unique_ptr<Db>& db, seconds s) {
     int a, b, high, low;
 
-    auto start = high_resolution_clock::now();
-    for (int i = 0; i < count; i++) {
-        // negligible overhead
+    auto stop = high_resolution_clock::now() + s;
+    int count = 0;
+    while (high_resolution_clock::now() < stop) {
         a = rand();
         b = rand();
         low = min(a, b);
         high = max(a, b);
         db->scan(low, high);
+        count++;
     }
-    return duration_cast<microseconds>(high_resolution_clock::now() - start).count();
+    return count;
 }
 
 // TODO: should take in argc and argv to configure memtable size and number of loops
 int main() {
-    const int memtable_size = 1024;
     const int entry_size = 16;
-    const int benchmark_interval = 52428800; // 50mb intervals
+    const int memtable_size = 5242880 / entry_size; // 5mb
+    const int benchmark_interval = 10485760; // 1mb intervals
     const int entries_per_interval = benchmark_interval / entry_size;
-    const int max_size = 1048576000; // 1gb
+    const int max_size = 104857600; // 50mb
+    const seconds duration(10);
+    const int duration_int = static_cast<int>(duration.count());
 
     unique_ptr<Db> db =  make_unique<Db1>(memtable_size);
     db->open("exp1");
 
     for (int i = 0; i < max_size / benchmark_interval; i++) {
-        int us_put = put_time(db, entries_per_interval);
-        int us_get = get_time(db, entries_per_interval);
-        int us_scan = scan_time(db, entries_per_interval);
+        int num_put = count_put(db, duration);
+        int num_get = count_get(db, duration);
+        int num_scan = count_scan(db, duration);
 
-        cout << "Current db size: " << i * benchmark_interval << "bytes" << endl;
-        cout << "put time(us): " << us_put << endl;
-        cout << "get time(us): " << us_get << endl;
-        cout << "scan time(us): " << us_scan << endl;
+        cout << "Current db size: " << num_put * 16 << "bytes" << endl;
+        cout << "num_put/s: " << num_put / duration_int << endl;
+        cout << "num_get/s: " << num_get / duration_int << endl;
+        cout << "num_scan/s: " << num_scan / duration_int << endl;
     }
+    db->close();
 }

@@ -4,11 +4,11 @@
 
 using namespace std;
 
-Sst::Sst(string filename, string dbname, shared_ptr<IOHandler> io_handler)
+Sst::Sst(string filename, string dbname, shared_ptr<IOHandler> handler)
 {
-    filename = filename;
-    dbname = dbname;
-    io_handler = io_handler;
+    this->filename = filename;
+    this->dbname = dbname;
+    this->io_handler = handler;
 }
 
 int Sst::write(const vector<pair<int, int>> &data)
@@ -22,9 +22,7 @@ int Sst::write(const vector<pair<int, int>> &data)
 
 optional<int> Sst::get(int key)
 {
-    cout << "Getting key: " << key << endl;
     int num_pages = io_handler->numPagesInFile(filename);
-    cout << "Number of pages: " << num_pages << endl;
     if (num_pages == -1)
     {
         return nullopt;

@@ -15,6 +15,12 @@
 using namespace std;
 
 class IOHandler {
+    private:
+        string dbname;
+        
+        string constructFilePath(const string filename);
+        
+
     public:
         IOHandler(const string dbname);
         
@@ -54,8 +60,6 @@ class IOHandler {
         */
         vector<string> getDbFilenames();
 
-    private:
-        string dbname;
 };
 
 #endif

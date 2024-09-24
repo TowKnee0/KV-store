@@ -7,13 +7,13 @@ using namespace std;
 
 Db1::Db1(int memtable_size)
 {
-    memtable_size = memtable_size;
+    this->memtable_size = memtable_size;
 }
 
 void Db1::open(string name)
 {
     name = name;
-    shared_ptr<IOHandler> io_handler = make_shared<IOHandler>(name);
+    io_handler = make_shared<IOHandler>(name);
     memtable = make_unique<Bst>(memtable_size);
 
     // Populate the sst vector with all the sst files associated with this db
@@ -27,6 +27,7 @@ void Db1::open(string name)
 
 void Db1::write_memtable()
 {
+    cout << "writing memtable" << endl;
     vector<pair<int, int>> data = memtable->inOrder();
 
     num_sst++;
@@ -42,6 +43,7 @@ void Db1::write_memtable()
 
 void Db1::put(int key, int value)
 {
+
     if (memtable->put(key, value) == EXIT_FAILURE)
     {
         write_memtable();

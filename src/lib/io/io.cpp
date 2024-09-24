@@ -24,16 +24,18 @@ const int PAIR_SIZE = sizeof(int) * 2; // Size of one key-value pair (2 integers
 const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum number of pairs that can be stored in a page.
 const int TOMBSTONE_VALUE = INT_MIN; // Special value to indicate an empty key / value.
 
-IOHandler::IOHandler(const string dbname) : dbname(dbname) {}
+IOHandler::IOHandler(const string dbname){
+    this->dbname = dbname;
+}
 
 // Helper function
-string constructFilePath(const string dbname, const string filename){
+string IOHandler::constructFilePath(const string filename){
     return "../data/" + dbname + "/" + filename; // Construct the relative path.
 }
 
 int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& data) {
      // Create the directory if it doesn't exist.
-    string fullPath = constructFilePath(dbname, filename);
+    string fullPath = constructFilePath(filename);
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
     if (!filesystem::exists(dirPath)) {
         filesystem::create_directories(dirPath);
@@ -45,7 +47,6 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
     int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY | O_TRUNC, 0644);
     if (fd < 0) {
         remove(fullPath.c_str());
-        cout << "fd < 0" << endl;
         return -1;
     }
 
@@ -54,7 +55,6 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
     if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0)
     {
         close(fd);
-        cout << "posix_memalign != 0" << endl;
         return -1;
     }
 
@@ -98,7 +98,6 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
             free(alignedMemory);
             close(fd);
             remove(fullPath.c_str());
-            cout << "prwite  < 0" << endl;
             return -1;
         }
 
@@ -114,7 +113,7 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
 optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filename, int pageNumber) {
     // Calculate the memory address for the page
     size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
-    string fullPath = constructFilePath(dbname, filename);
+    string fullPath = constructFilePath(filename);
     int fd = open(fullPath.c_str(), O_DIRECT | O_RDONLY);
     
     if (fd < 0) {
