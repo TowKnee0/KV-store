@@ -12,7 +12,7 @@ Db1::Db1(int memtable_size)
 
 void Db1::open(string name)
 {
-    name = name;
+    this->name = name;
     io_handler = make_shared<IOHandler>(name);
     memtable = make_unique<Bst>(memtable_size);
 
@@ -31,7 +31,6 @@ void Db1::write_memtable()
     vector<pair<int, int>> data = memtable->inOrder();
 
     num_sst++;
-    shared_ptr<IOHandler> io_handler = make_shared<IOHandler>(name);
     unique_ptr<Sst> s = make_unique<Sst>(to_string(num_sst), name, io_handler);
 
     if (s->write(data) == EXIT_FAILURE){

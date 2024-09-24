@@ -44,11 +44,11 @@ int count_scan(const unique_ptr<Db>& db, seconds s) {
 // TODO: should take in argc and argv to configure memtable size and number of loops
 int main() {
     const int entry_size = 16;
-    const int memtable_size = 5242880 / entry_size; // 5mb
+    const int memtable_size = 10485760 ; // 5mb
     const int benchmark_interval = 10485760; // 1mb intervals
     const int entries_per_interval = benchmark_interval / entry_size;
     const int max_size = 104857600; // 50mb
-    const seconds duration(10);
+    const seconds duration(2);
     const int duration_int = static_cast<int>(duration.count());
 
     unique_ptr<Db> db =  make_unique<Db1>(memtable_size);
@@ -56,13 +56,13 @@ int main() {
 
     for (int i = 0; i < max_size / benchmark_interval; i++) {
         int num_put = count_put(db, duration);
-        int num_get = count_get(db, duration);
-        int num_scan = count_scan(db, duration);
+        // int num_get = count_get(db, duration);
+        // int num_scan = count_scan(db, duration);
 
         cout << "Current db size: " << num_put * 16 << "bytes" << endl;
         cout << "num_put/s: " << num_put / duration_int << endl;
-        cout << "num_get/s: " << num_get / duration_int << endl;
-        cout << "num_scan/s: " << num_scan / duration_int << endl;
+        // cout << "num_get/s: " << num_get / duration_int << endl;
+        // cout << "num_scan/s: " << num_scan / duration_int << endl;
     }
     db->close();
 }

@@ -13,7 +13,8 @@ class Db1 : public Db {
         
         int num_sst;
         vector<unique_ptr<Sst>> sst;
-
+        shared_ptr<IOHandler> io_handler;
+        
         void write_memtable();
 
     // TODO: check which of these can be shared and put it as non-virtual in ../db.h
