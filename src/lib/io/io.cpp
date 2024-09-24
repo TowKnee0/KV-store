@@ -168,3 +168,6 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
     close(fd);
     return pairs; // Return the read key-value pairs.
 }
+
+vector<string> IOHandler::getDbFilenames(){ return {};};
+int IOHandler::numPagesInFile(const string filename){ return -1;};

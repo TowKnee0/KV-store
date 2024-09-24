@@ -7,6 +7,7 @@
 #include <utility>
 #include <string>
 #include <iostream>
+#include "../lib/io/io.h"
 
 // Mocking the IO functions
 int writeToFileMock(const string &dbname, const string &filename, const vector<pair<int, int>> &data)
@@ -41,7 +42,8 @@ optional<vector<pair<int, int>>> readPageFromFileMock(const string &dbname, cons
 
 TEST_CASE("Sst::get", "[get]")
 {
-    Sst sst("testfile", "testdb");
+    shared_ptr<IOHandler> io_handler = make_shared<IOHandler>("testdb");
+    Sst sst("testfile", "testdb", io_handler);
 
     SECTION("Key exists in the first page")
     {
@@ -73,7 +75,9 @@ TEST_CASE("Sst::get", "[get]")
 
 TEST_CASE("Sst::scan", "[scan]")
 {
-    Sst sst("testfile", "testdb");
+    shared_ptr<IOHandler> io_handler = make_shared<IOHandler>("testdb");
+
+    Sst sst("testfile", "testdb", io_handler);
 
     SECTION("Range within a single page")
     {

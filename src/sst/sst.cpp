@@ -4,15 +4,16 @@
 
 using namespace std;
 
-Sst::Sst(string filename, string dbname)
+Sst::Sst(string filename, string dbname, shared_ptr<IOHandler> io_handler)
 {
     filename = filename;
     dbname = dbname;
+    io_handler = io_handler;
 }
 
 int Sst::write(const vector<pair<int, int>> &data)
 {
-    if (writeToFile(dbname, filename, data) == -1)
+    if (io_handler->writeToFile(filename, data) == -1)
     {
         return EXIT_FAILURE;
     }
@@ -22,7 +23,7 @@ int Sst::write(const vector<pair<int, int>> &data)
 optional<int> Sst::get(int key)
 {
     cout << "Getting key: " << key << endl;
-    int num_pages = numPagesInFile(dbname, filename);
+    int num_pages = io_handler->numPagesInFile(filename);
     cout << "Number of pages: " << num_pages << endl;
     if (num_pages == -1)
     {
@@ -37,7 +38,7 @@ optional<int> Sst::get(int key)
     while (start <= end)
     {
         int mid = start + (end - start) / 2;
-        optional<vector<pair<int, int>>> page = readPageFromFile(dbname, filename, mid);
+        optional<vector<pair<int, int>>> page = io_handler->readPageFromFile(filename, mid);
 
         // Error while reading page.
         if (!page)
@@ -99,7 +100,7 @@ vector<entry> *Sst::scan(int rangeStart, int rangeEnd)
 {
 
     // Step 1: Find out how many pages are in the file.
-    int num_pages = numPagesInFile(dbname, filename);
+    int num_pages = io_handler->numPagesInFile(filename);
     vector<entry> *result = new vector<entry>();
 
     // Step 2: perform binary search on the page to find the rangeStart.
@@ -116,7 +117,7 @@ vector<entry> *Sst::scan(int rangeStart, int rangeEnd)
     while (start <= end)
     {
         int mid = start + (end - start) / 2;
-        optional<vector<pair<int, int>>> page = readPageFromFile(dbname, filename, mid);
+        optional<vector<pair<int, int>>> page = io_handler->readPageFromFile(filename, mid);
 
         // Error while reading page.
         if (!page)
@@ -187,7 +188,7 @@ vector<entry> *Sst::scan(int rangeStart, int rangeEnd)
     while (should_continue)
     {
         // Read the next page and continue scanning.
-        optional<vector<pair<int, int>>> page = readPageFromFile(dbname, filename, start);
+        optional<vector<pair<int, int>>> page = io_handler->readPageFromFile(filename, start);
         if (!page)
         {
             // If we run out of pages, we should stop scanning and return what we have so far.

@@ -13,14 +13,15 @@ Db1::Db1(int memtable_size)
 void Db1::open(string name)
 {
     name = name;
+    shared_ptr<IOHandler> io_handler = make_shared<IOHandler>(name);
     memtable = make_unique<Bst>(memtable_size);
 
     // Populate the sst vector with all the sst files associated with this db
     // Assume that the sst files are sorted in ascending order of creation
-    vector<string> filenames = getDbFilenames(name);
+    vector<string> filenames = io_handler->getDbFilenames();
     for (auto &f : filenames)
     {
-        sst.push_back(make_unique<Sst>(f, name));
+        sst.push_back(make_unique<Sst>(f, name, io_handler));
     }
 }
 
@@ -29,7 +30,7 @@ void Db1::write_memtable()
     vector<pair<int, int>> data = memtable->inOrder();
 
     num_sst++;
-    unique_ptr<Sst> s = make_unique<Sst>(to_string(num_sst), name);
+    unique_ptr<Sst> s = make_unique<Sst>(to_string(num_sst), name, io_handler);
 
     if (s->write(data) == EXIT_FAILURE){
         throw runtime_error("memtable write failed");
