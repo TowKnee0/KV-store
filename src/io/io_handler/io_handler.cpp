@@ -175,11 +175,18 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
 }
 
 vector<string> IOHandler::getDbFilenames(){ 
-    vector<string> filenames;
+    cout << "getting file names" << endl;
     string filepath = constructFilePath();
+
+    if (!filesystem::exists(filepath)) {
+        return {};
+    }
+    vector<string> filenames;
     for (const auto & entry : filesystem::directory_iterator(filepath)) {
         filenames.push_back(entry.path().filename());
     }
+    cout << "got file names" << endl;
+
     return filenames;
 }
 
