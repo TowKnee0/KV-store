@@ -1,10 +1,10 @@
 #include "sorted_list.h"
-#include "../../lib/io/io.h"
+#include "../../io/io_handler/io_handler.h"
 #include <iostream>
 
 using namespace std;
 
-SortedList::SortedList(string filename, string dbname, shared_ptr<IOHandler> handler)
+SortedList::SortedList(string filename, string dbname, shared_ptr<IO> handler)
 {
     this->filename = filename;
     this->dbname = dbname;

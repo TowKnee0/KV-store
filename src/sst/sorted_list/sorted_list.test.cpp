@@ -4,16 +4,15 @@
 #include <utility>
 #include <string>
 #include <iostream>
-#include "../../lib/io/io.h"
+#include "../../io/io.h"
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 using namespace testing;
 
 // Create a mock for IOHandler
-class MockIOHandler : public IOHandler {
+class MockIOHandler : public IO {
 public:
-    MockIOHandler(const string dbname) : IOHandler(dbname) {}
     MOCK_METHOD(int, writeToFile, (const string filename, (const vector<pair<int, int>> &data)));
     MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile, (const string filename, int pageNumber));
     MOCK_METHOD(int, numPagesInFile, (const string filename));
@@ -23,7 +22,7 @@ public:
 // Tests for sst.cpp
 TEST(SstTest, WriteTest) {
     // Create a mock IOHandler
-    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>("test_db");
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
     string filename = "test_sst";
     SortedList sortedList(filename, "test_db", mockIOHandler);
 

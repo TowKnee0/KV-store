@@ -5,16 +5,17 @@
  * - Writing to a file
  * - Reading a specific page in a file starting from some offset
  */
-#ifndef IO_H
-#define IO_H
+#ifndef IO_Handler_H
+#define IO_handler_H
 
 #include <string>
 #include <vector>
 #include <optional>
+#include "../io.h"
 
 using namespace std;
 
-class IOHandler {
+class IOHandler: public IO {
     private:
         string dbname;
         

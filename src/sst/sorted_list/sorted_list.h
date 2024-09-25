@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "../../lib/io/io.h"
+#include "../../io/io.h"
 #include "../sst.h"
 
 using namespace std;
@@ -20,10 +20,10 @@ class SortedList : public Sst
 private:
     string filename; // Which file the Sst is stored in
     string dbname;
-    shared_ptr<IOHandler> io_handler;
+    shared_ptr<IO> io_handler;
 
 public:
-    SortedList(string filename, string dbname, shared_ptr<IOHandler> io_handler);
+    SortedList(string filename, string dbname, shared_ptr<IO> io_handler);
     int write(const vector<pair<int, int>> &data);
     optional<int> get(int key); // Search the corresponding value for this key.
 
