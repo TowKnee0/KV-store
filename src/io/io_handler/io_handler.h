@@ -19,7 +19,8 @@ class IOHandler: public IO {
     private:
         string dbname;
         
-        string constructFilePath(const string filename);
+        string constructFilePath();
+        string constructFileName(const string filename);
         
 
     public:

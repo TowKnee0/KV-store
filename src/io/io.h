@@ -52,6 +52,9 @@ class IO {
         */
         virtual vector<string> getDbFilenames() = 0;
 
+        virtual ~IO() = default;
+
+
 };
 
 #endif
