@@ -1,10 +1,10 @@
-#include "sst.h"
+#include "sorted_list.h"
 #include <vector>
 #include <optional>
 #include <utility>
 #include <string>
 #include <iostream>
-#include "../lib/io/io.h"
+#include "../../lib/io/io.h"
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -14,10 +14,10 @@ using namespace testing;
 class MockIOHandler : public IOHandler {
 public:
     MockIOHandler(const string dbname) : IOHandler(dbname) {}
-    MOCK_METHOD(int, writeToFile, (const string filename, (const vector<pair<int, int>> &data)), (override));
-    MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile, (const string filename, int pageNumber), (override));
-    MOCK_METHOD(int, numPagesInFile, (const string filename), (override));
-    MOCK_METHOD(vector<string>, getDbFilenames, (), (override));
+    MOCK_METHOD(int, writeToFile, (const string filename, (const vector<pair<int, int>> &data)));
+    MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile, (const string filename, int pageNumber));
+    MOCK_METHOD(int, numPagesInFile, (const string filename));
+    MOCK_METHOD(vector<string>, getDbFilenames, ());
 };
 
 // Tests for sst.cpp

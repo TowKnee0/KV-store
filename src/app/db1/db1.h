@@ -1,6 +1,6 @@
 #include "../db.h"
 #include "../../memtable/bst.h"
-#include "../../sst/sst.h"
+#include "../../sst/sorted_list/sorted_list.h"
 #include <memory>
 
 using namespace std;

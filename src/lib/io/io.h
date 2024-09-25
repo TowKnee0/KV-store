@@ -31,7 +31,7 @@ class IOHandler {
         *  - filename: the name of the file to write to.
         *  - data: vector of key-value pairs to write into the file named filename.
         */
-        virtual int writeToFile(const string filename, const vector<pair<int, int>> &data);
+        int writeToFile(const string filename, const vector<pair<int, int>> &data);
 
         /*
         * Read a specific page (4KB) of key-value pairs from a binary file.
@@ -41,7 +41,7 @@ class IOHandler {
         *  - filename: the name of the file to read from.
         *  - pageNumber: the page number to read from. Page numbers are 1-indexed.
         */
-        virtual optional<vector<pair<int, int>>> readPageFromFile(const string filename, int pageNumber);
+        optional<vector<pair<int, int>>> readPageFromFile(const string filename, int pageNumber);
 
         /*
         * Get the number of pages in a file.
@@ -50,7 +50,7 @@ class IOHandler {
         * Parameters:
         *  - filename: the name of the file to read from.
         */
-        virtual int numPagesInFile(const string filename);
+        int numPagesInFile(const string filename);
 
         /*
         * Get all sst filenames associated with a specific db instance.
@@ -58,7 +58,7 @@ class IOHandler {
         * Should be sorted (ie oldest first, newest last).
         *
         */
-        virtual vector<string> getDbFilenames();
+        vector<string> getDbFilenames();
 
 };
 

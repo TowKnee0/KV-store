@@ -22,11 +22,6 @@ struct entry
 
 class Sst
 {
-private:
-    string filename; // Which file the Sst is stored in
-    string dbname;
-    shared_ptr<IOHandler> io_handler;
-
 public:
     Sst(string filename, string dbname, shared_ptr<IOHandler> io_handler); // The Sst should be assigned a unique name.
     int write(const vector<pair<int, int>> &data);
