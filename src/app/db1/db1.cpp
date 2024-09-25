@@ -15,6 +15,7 @@ Db1::Db1(int memtable_size)
 void Db1::open(string name)
 {
     this->name = name;
+    num_sst = 0;
     io_handler = make_shared<IOHandler>(name);
     memtable = make_unique<Bst>(memtable_size);
 

@@ -30,13 +30,14 @@ IOHandler::IOHandler(const string dbname){
 
 // Helper function
 string IOHandler::constructFilePath(const string filename){
-    return "../data/" + dbname + "/" + filename; // Construct the relative path.
+    return "data/" + dbname + "/" + filename + ".bin"; // Construct the relative path.
 }
 
 int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& data) {
      // Create the directory if it doesn't exist.
     string fullPath = constructFilePath(filename);
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
+    cout << dirPath << endl;
     if (!filesystem::exists(dirPath)) {
         filesystem::create_directories(dirPath);
     }
@@ -107,6 +108,7 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
 
     free(alignedMemory);
     close(fd);
+    cout<< "finished writing to file: " << fullPath << endl;
     return 1;
 }
 
