@@ -100,30 +100,29 @@ TEST(SstTest, ScanTest)
     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 4)).Times(AtLeast(1)).WillRepeatedly(Return(data4));
 
     // Call the scan method
-    vector<entry> *result = sortedList.scan(1, 20);
+    vector<entry> result = sortedList.scan(1, 20);
 
     // Check the result
-    ASSERT_EQ(result->size(), 9);
-    EXPECT_EQ(result->at(0).key, 3);
-    EXPECT_EQ(result->at(0).value, 4);
-    EXPECT_EQ(result->at(1).key, 5);
-    EXPECT_EQ(result->at(1).value, 6);
-    EXPECT_EQ(result->at(2).key, 7);
-    EXPECT_EQ(result->at(2).value, 8);
-    EXPECT_EQ(result->at(3).key, 9);
-    EXPECT_EQ(result->at(3).value, 10);
-    EXPECT_EQ(result->at(4).key, 11);
-    EXPECT_EQ(result->at(4).value, 12);
-    EXPECT_EQ(result->at(5).key, 13);
-    EXPECT_EQ(result->at(5).value, 14);
-    EXPECT_EQ(result->at(6).key, 15);
-    EXPECT_EQ(result->at(6).value, 16);
-    EXPECT_EQ(result->at(7).key, 17);
-    EXPECT_EQ(result->at(7).value, 18);
-    EXPECT_EQ(result->at(8).key, 19);
-    EXPECT_EQ(result->at(8).value, 20);
+    ASSERT_EQ(result.size(), 9);
+    EXPECT_EQ(result.at(0).key, 3);
+    EXPECT_EQ(result.at(0).value, 4);
+    EXPECT_EQ(result.at(1).key, 5);
+    EXPECT_EQ(result.at(1).value, 6);
+    EXPECT_EQ(result.at(2).key, 7);
+    EXPECT_EQ(result.at(2).value, 8);
+    EXPECT_EQ(result.at(3).key, 9);
+    EXPECT_EQ(result.at(3).value, 10);
+    EXPECT_EQ(result.at(4).key, 11);
+    EXPECT_EQ(result.at(4).value, 12);
+    EXPECT_EQ(result.at(5).key, 13);
+    EXPECT_EQ(result.at(5).value, 14);
+    EXPECT_EQ(result.at(6).key, 15);
+    EXPECT_EQ(result.at(6).value, 16);
+    EXPECT_EQ(result.at(7).key, 17);
+    EXPECT_EQ(result.at(7).value, 18);
+    EXPECT_EQ(result.at(8).key, 19);
+    EXPECT_EQ(result.at(8).value, 20);
 
-    delete result;
 }
 
 TEST(SstTest, ScanEmptyRangeTest)
@@ -137,10 +136,9 @@ TEST(SstTest, ScanEmptyRangeTest)
     EXPECT_CALL(*mockIOHandler, numPagesInFile(filename)).Times(1).WillOnce(Return(0));
 
     // Call the scan method with an empty range
-    vector<entry> *result = sortedList.scan(1, 6);
+    vector<entry> result = sortedList.scan(1, 6);
 
     // Check the result
-    ASSERT_EQ(result->size(), 0);
+    ASSERT_EQ(result.size(), 0);
 
-    delete result;
 }

@@ -38,7 +38,7 @@ public:
      * Returns:
      * - A vector of key-value pairs that are in the given range.
      */
-    vector<entry> *scan(int rangeStart, int rangeEnd);
+    vector<entry> scan(int rangeStart, int rangeEnd);
 };
 
 #endif

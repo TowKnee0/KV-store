@@ -73,15 +73,12 @@ optional<int> Db1::get(int key)
 
 vector<pair<int, int>> Db1::scan(int key1, int key2)
 {
-    // Step 1: Create a vector to store the result of each sst scan.
-    // Step 2: scan each sst, updating the vector.
-    // Combine the results in sorted order and return the result.
-
-    vector<vector<entry> *> results;
+    
+    vector<vector<entry>> results;
     for (auto &s : sst)
     {
-        vector<entry> *entries = s->scan(key1, key2);
-        if (entries != nullptr)
+        vector<entry> entries = s->scan(key1, key2);
+        if (entries.size() != 0)
         {
             results.push_back(entries);
         }
@@ -98,9 +95,9 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
 
     for (int i = 0; i < results.size(); i++)
     {
-        if (results[i]->size() > 0)
+        if (results[i].size() > 0)
         {
-            min_heap.push({results[i]->at(0).key, i});
+            min_heap.push({results[i].at(0).key, i});
         }
     }
 
@@ -109,12 +106,12 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
         auto [key, i] = min_heap.top();
         min_heap.pop();
 
-        combined.push_back({key, results[i]->at(indexes[i]).value});
+        combined.push_back({key, results[i].at(indexes[i]).value});
         indexes[i]++;
 
-        if (indexes[i] < results[i]->size())
+        if (indexes[i] < results[i].size())
         {
-            min_heap.push({results[i]->at(indexes[i]).key, i});
+            min_heap.push({results[i].at(indexes[i]).key, i});
         }
     }
 
