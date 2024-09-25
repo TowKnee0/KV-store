@@ -28,9 +28,6 @@ optional<int> SortedList::get(int key)
         return nullopt;
     }
 
-    // TODO: Delete
-    cout << "Num pages: " << num_pages << endl;
-    cout << "Looking for key: " << key << endl;
 
     // Pages are 1 indexed
     int start = 1;
@@ -49,11 +46,7 @@ optional<int> SortedList::get(int key)
         }
 
         vector<pair<int, int>> pairs = page.value();
-        // Print the values
-        for (auto &pair : pairs)
-        {
-            cout << pair.first << " " << pair.second << endl;
-        }
+        
 
         // Perform binary search on the page
         int low = 0;
@@ -118,7 +111,7 @@ vector<entry> *SortedList::scan(int rangeStart, int rangeEnd)
     int start = 1;
     int end = num_pages;
 
-    bool should_continue = true;
+    bool should_continue = false;
 
     // Perform binary search on the pages.
     while (start <= end)
@@ -188,6 +181,7 @@ vector<entry> *SortedList::scan(int rangeStart, int rangeEnd)
         {
             should_continue = false;
         }
+        should_continue = true;
         break;
     }
 

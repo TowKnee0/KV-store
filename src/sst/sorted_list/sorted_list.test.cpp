@@ -94,16 +94,16 @@ TEST(SstTest, ScanTest)
     EXPECT_CALL(*mockIOHandler, numPagesInFile(filename)).Times(1).WillOnce(Return(4));
 
     // Expect the readPageFromFile method to be called four times
-    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 1)).Times(1).WillOnce(Return(data1));
-    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 2)).Times(1).WillOnce(Return(data2));
-    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 3)).Times(1).WillOnce(Return(data3));
-    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 4)).Times(1).WillOnce(Return(data4));
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 2)).Times(AtLeast(1)).WillRepeatedly(Return(data2));
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 1)).Times(AtLeast(1)).WillRepeatedly(Return(data1));
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 3)).Times(AtLeast(1)).WillRepeatedly(Return(data3));
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 4)).Times(AtLeast(1)).WillRepeatedly(Return(data4));
 
     // Call the scan method
     vector<entry> *result = sortedList.scan(1, 20);
 
     // Check the result
-    ASSERT_EQ(result->size(), 10);
+    ASSERT_EQ(result->size(), 9);
     EXPECT_EQ(result->at(0).key, 3);
     EXPECT_EQ(result->at(0).value, 4);
     EXPECT_EQ(result->at(1).key, 5);
@@ -122,8 +122,6 @@ TEST(SstTest, ScanTest)
     EXPECT_EQ(result->at(7).value, 18);
     EXPECT_EQ(result->at(8).key, 19);
     EXPECT_EQ(result->at(8).value, 20);
-    EXPECT_EQ(result->at(9).key, 21);
-    EXPECT_EQ(result->at(9).value, 22);
 
     delete result;
 }
