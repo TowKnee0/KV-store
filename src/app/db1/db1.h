@@ -12,7 +12,7 @@ class Db1 : public Db {
         unique_ptr<Bst> memtable;
         
         int num_sst;
-        vector<unique_ptr<Sst>> sst;
+        vector<unique_ptr<SortedList>> sst;
         shared_ptr<IOHandler> io_handler;
         
         void write_memtable();

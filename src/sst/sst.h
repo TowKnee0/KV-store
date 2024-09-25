@@ -23,9 +23,8 @@ struct entry
 class Sst
 {
 public:
-    Sst(string filename, string dbname, shared_ptr<IOHandler> io_handler); // The Sst should be assigned a unique name.
-    int write(const vector<pair<int, int>> &data);
-    optional<int> get(int key); // Search the corresponding value for this key.
+    virtual int write(const vector<pair<int, int>> &data) = 0;
+    virtual optional<int> get(int key) = 0; // Search the corresponding value for this key.
 
     /*
      * Scans the SST file and returns all key-value pairs that are in the given target range.

@@ -3,24 +3,19 @@
 // The memtable will output all the key-value pairs to a sorted file which we will save in our storage device.
 // We will handle only integer primitive datatype for simplicity. i.e. both the key and value is an integer
 
-#ifndef Sst_H
-#define Sst_H
+#ifndef SortedList_H
+#define SortedList_H
 
 #include <optional>
 #include <vector>
 #include <string>
 #include <memory>
 #include "../../lib/io/io.h"
+#include "../sst.h"
 
 using namespace std;
 
-struct entry
-{
-    int key;
-    int value;
-};
-
-class Sst
+class SortedList : public Sst
 {
 private:
     string filename; // Which file the Sst is stored in
@@ -28,7 +23,7 @@ private:
     shared_ptr<IOHandler> io_handler;
 
 public:
-    Sst(string filename, string dbname, shared_ptr<IOHandler> io_handler); // The Sst should be assigned a unique name.
+    SortedList(string filename, string dbname, shared_ptr<IOHandler> io_handler);
     int write(const vector<pair<int, int>> &data);
     optional<int> get(int key); // Search the corresponding value for this key.
 

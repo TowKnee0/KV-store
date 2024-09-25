@@ -4,14 +4,14 @@
 
 using namespace std;
 
-Sst::Sst(string filename, string dbname, shared_ptr<IOHandler> handler)
+SortedList::SortedList(string filename, string dbname, shared_ptr<IOHandler> handler)
 {
     this->filename = filename;
     this->dbname = dbname;
     this->io_handler = handler;
 }
 
-int Sst::write(const vector<pair<int, int>> &data)
+int SortedList::write(const vector<pair<int, int>> &data)
 {
     if (io_handler->writeToFile(filename, data) == -1)
     {
@@ -20,7 +20,7 @@ int Sst::write(const vector<pair<int, int>> &data)
     return EXIT_SUCCESS;
 }
 
-optional<int> Sst::get(int key)
+optional<int> SortedList::get(int key)
 {
     int num_pages = io_handler->numPagesInFile(filename);
     if (num_pages == -1)
@@ -94,7 +94,7 @@ optional<int> Sst::get(int key)
     return nullopt;
 }
 
-vector<entry> *Sst::scan(int rangeStart, int rangeEnd)
+vector<entry> *SortedList::scan(int rangeStart, int rangeEnd)
 {
 
     // Step 1: Find out how many pages are in the file.

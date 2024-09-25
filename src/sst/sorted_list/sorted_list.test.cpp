@@ -25,7 +25,7 @@ TEST(SstTest, WriteTest) {
     // Create a mock IOHandler
     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>("test_db");
     string filename = "test_sst";
-    Sst sst(filename, "test_db", mockIOHandler);
+    SortedList sortedList(filename, "test_db", mockIOHandler);
 
     // Create some data
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
@@ -34,5 +34,5 @@ TEST(SstTest, WriteTest) {
     EXPECT_CALL(*mockIOHandler, writeToFile(filename, data)).Times(1).WillOnce(Return(1));
 
     // Call the write method
-    EXPECT_EQ(sst.write(data), 0);
+    EXPECT_EQ(sortedList.write(data), 0);
 }

@@ -21,7 +21,7 @@ void Db1::open(string name)
     vector<string> filenames = io_handler->getDbFilenames();
     for (auto &f : filenames)
     {
-        sst.push_back(make_unique<Sst>(f, name, io_handler));
+        sst.push_back(make_unique<SortedList>(f, name, io_handler));
     }
 }
 
@@ -31,7 +31,7 @@ void Db1::write_memtable()
     vector<pair<int, int>> data = memtable->inOrder();
 
     num_sst++;
-    unique_ptr<Sst> s = make_unique<Sst>(to_string(num_sst), name, io_handler);
+    unique_ptr<SortedList> s = make_unique<SortedList>(to_string(num_sst), name, io_handler);
 
     if (s->write(data) == EXIT_FAILURE){
         throw runtime_error("memtable write failed");
