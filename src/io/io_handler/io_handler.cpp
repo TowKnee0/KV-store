@@ -29,13 +29,17 @@ IOHandler::IOHandler(const string dbname){
 }
 
 // Helper function
-string IOHandler::constructFilePath(const string filename){
-    return "data/" + dbname + "/" + filename + ".bin"; // Construct the relative path.
+string IOHandler::constructFilePath(){
+    return "data/" + dbname + "/"; // Construct the relative path.
+}
+
+string IOHandler::constructFileName(const string filename){
+    return filename + ".bin";
 }
 
 int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& data) {
      // Create the directory if it doesn't exist.
-    string fullPath = constructFilePath(filename);
+    string fullPath = constructFilePath() + constructFileName(filename);
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
     cout << dirPath << endl;
     if (!filesystem::exists(dirPath)) {
@@ -115,7 +119,7 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
 optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filename, int pageNumber) {
     // Calculate the memory address for the page
     size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
-    string fullPath = constructFilePath(filename);
+    string fullPath = constructFilePath() + constructFileName(filename);
     int fd = open(fullPath.c_str(), O_DIRECT | O_RDONLY);
     
     if (fd < 0) {
@@ -170,5 +174,13 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
     return pairs; // Return the read key-value pairs.
 }
 
-vector<string> IOHandler::getDbFilenames(){ return {};};
+vector<string> IOHandler::getDbFilenames(){ 
+    vector<string> filenames;
+    string filepath = constructFilePath();
+    for (const auto & entry : filesystem::directory_iterator(filepath)) {
+        filenames.push_back(entry.path().filename());
+    }
+    return filenames;
+}
+
 int IOHandler::numPagesInFile(const string filename){ return -1;};
