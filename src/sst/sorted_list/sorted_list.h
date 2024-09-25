@@ -29,7 +29,7 @@ public:
 
     /*
      * Scans the SST file and returns all key-value pairs that are in the given target range.
-     * The range is exclusive of both endpints.
+     * The range is EXCLUSIVE of both endpints.
      *
      * Parameters:
      * - rangeStart: the start of the range (exclusive)
