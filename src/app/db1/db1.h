@@ -1,6 +1,6 @@
 #include "../db.h"
-#include "../../memtable/bst.h"
-#include "../../sst/sorted_list/sorted_list.h"
+#include "../../memtable/memtable.h"
+#include "../../sst/sst.h"
 #include <memory>
 
 using namespace std;
@@ -9,10 +9,10 @@ class Db1 : public Db {
     private:
         string name;
         int memtable_size;
-        unique_ptr<Bst> memtable;
+        unique_ptr<Memtable> memtable;
         
         int num_sst;
-        vector<unique_ptr<SortedList>> sst;
+        vector<unique_ptr<Sst>> sst;
         shared_ptr<IOHandler> io_handler;
         
         void write_memtable();

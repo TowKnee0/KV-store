@@ -1,11 +1,13 @@
 
 #include <gtest/gtest.h>
-#define private public
 
 #include <optional>
 #include <vector>
 #include <utility>
+
+#define private public
 #include "bst.h"
+
 
 using namespace std;
 

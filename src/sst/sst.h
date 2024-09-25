@@ -38,6 +38,9 @@ public:
      * - A vector of key-value pairs that are in the given range.
      */
     vector<entry> *scan(int rangeStart, int rangeEnd);
+
+    virtual ~Sst() = default;
+
 };
 
 #endif

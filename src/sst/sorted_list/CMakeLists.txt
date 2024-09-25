@@ -1,5 +1,5 @@
 enable_testing()
-add_library(sorted_list sorted_list.cpp)
+add_library(sorted_list sorted_list.cpp ../sst.h)
 target_link_libraries(sorted_list io)
 
 add_executable(sorted_list_test sorted_list.test.cpp)

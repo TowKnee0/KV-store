@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include "../memtable.h"
 
 using namespace std;
 
@@ -20,7 +21,7 @@ struct node
         weak_ptr<node> parent;
 };
 
-class Bst {
+class Bst: public Memtable {
     private:
         int max_size;
         int c_size;
