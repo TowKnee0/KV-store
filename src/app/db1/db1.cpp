@@ -55,7 +55,7 @@ void Db1::put(int key, int value)
 
 optional<int> Db1::get(int key)
 {
-    if (auto v = memtable->get(key) != nullopt)
+    if (auto v = memtable->get(key); v != nullopt)
     {
         return v;
     }
@@ -63,7 +63,7 @@ optional<int> Db1::get(int key)
     // iterate backwards through sst's since higher number => more recent
     for (auto it = sst.rbegin(); it != sst.rend(); ++it)
     {
-        if (auto v = (*it)->get(key) != nullopt)
+        if (auto v = (*it)->get(key); v != nullopt)
         {
             return v;
         }
@@ -74,6 +74,9 @@ optional<int> Db1::get(int key)
 vector<pair<int, int>> Db1::scan(int key1, int key2)
 {
     
+    // Scan the memtable first
+    
+
     vector<vector<entry>> results;
     for (auto &s : sst)
     {
