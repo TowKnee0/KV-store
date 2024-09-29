@@ -81,15 +81,13 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
             memcpy(static_cast<char *>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
         }
 
-        // When there are pairs present than the maximum capacity of the page we will it with ignore values
+        // When there are pairs present than the maximum capacity of the page we will fill the next free entry with a tombstone value.
+        // This will indicate that we do not need to process the rest of the page.
         if (pairs_in_this_page < MAX_PAIRS)
         {
-            for (int i = pairs_in_this_page; i < MAX_PAIRS; i++)
-            {
-                pair<int, int> tombstone = {TOMBSTONE_VALUE, TOMBSTONE_VALUE};
-                int offset = i * PAIR_SIZE;
-                memcpy(static_cast<char *>(alignedMemory) + offset, &tombstone, PAIR_SIZE);
-            }
+            pair<int, int> tombstone = {TOMBSTONE_VALUE, TOMBSTONE_VALUE};
+            int offset = pairs_in_this_page * PAIR_SIZE;
+            memcpy(static_cast<char *>(alignedMemory) + offset, &tombstone, PAIR_SIZE);
         }
 
         /**
@@ -156,10 +154,10 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
         char *keyPtr = static_cast<char *>(buffer) + pairOffset;
         char *valuePtr = static_cast<char *>(buffer) + pairOffset + sizeof(int);
 
-        // Skip tombstone values (dereference before comparison)
+        // We have reached a tombstone value so there is no point reading the rest of the page
         if (*(int *)keyPtr == TOMBSTONE_VALUE && *(int *)valuePtr == TOMBSTONE_VALUE)
         {
-            continue;
+            break;
         }
 
         // Copy the key and value into the current_pair
@@ -191,3 +189,47 @@ vector<string> IOHandler::getDbFilenames(){
 }
 
 int IOHandler::numPagesInFile(const string filename){ return -1;};
+
+int main() {
+    // Sample database and filename
+    string dbname = "test_db";
+    string filename = "datafile";
+
+    // Create an instance of IOHandler
+    IOHandler ioHandler(dbname);
+
+    // Generate a large dataset to write
+    vector<pair<int, int>> data;
+    for (int i = 1; i <= 513; ++i) {
+        pair<int, int> newPair = {i, i};
+        data.push_back(newPair);
+    }
+
+    cout << "Starting the write operation..." << endl;
+
+    // Write the sample data to the file
+    int writeResult = ioHandler.writeToFile(filename, data);
+    if (writeResult == -1) {
+        cout << "Error writing to file." << endl;
+        return 1;
+    }
+    cout << "Successfully wrote " << data.size() << " pairs to the file." << endl;
+
+    for (int pageNum = 1; pageNum <= 5; pageNum++) {
+        cout << "Attempting to read page " << pageNum << " from the file..." << endl;
+        optional<vector<pair<int, int>>> readData = ioHandler.readPageFromFile(filename, pageNum);
+        if (!readData) {
+            cout << "Error reading from page " << pageNum << " of the file." << endl;
+            continue;
+        }
+
+        // Output the read data
+        cout << "Reading page " << pageNum << " with an observed size of " << readData->size() << endl;
+        for (const auto& pair : *readData) {
+            cout << "Key: " << pair.first << ", Value: " << pair.second << endl;
+        }
+        cout << "Finished reading from page " << pageNum << "." << endl;
+    }
+
+    return 0;
+}
