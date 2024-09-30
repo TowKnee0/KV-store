@@ -81,3 +81,23 @@ TEST(BstTest, Clear) {
     EXPECT_EQ(b.c_size, 0);
     EXPECT_EQ(b.root, nullptr);
 }
+
+TEST(BstTest, ScanRange) {
+    Bst b(7);
+    b.put(1, 10);
+    b.put(5, 50);
+    b.put(2, 20);
+    b.put(4, 40);
+    b.put(3, 30);
+    b.put(6, 60);
+    b.put(7, 70);
+
+    vector<pair<int, int>> expected = {
+        {2, 20},
+        {3, 30},
+        {4, 40},
+        {5, 50}
+    };
+
+    EXPECT_EQ(b.scan(2, 5), expected);
+}
