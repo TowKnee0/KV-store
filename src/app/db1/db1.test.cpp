@@ -37,7 +37,7 @@ class MockSST : public Sst
 public:
     MOCK_METHOD(int, write, ((const vector<pair<int, int>>) &data));
     MOCK_METHOD((optional<int>), get, (int key));
-    MOCK_METHOD((vector<entry>), scan, (int rangeStart, int rangeEnd));
+    MOCK_METHOD((vector<pair<int,int>>), scan, (int rangeStart, int rangeEnd));
 };
 
 // Test getting when the data is in the Memtable

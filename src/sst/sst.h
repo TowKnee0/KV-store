@@ -13,12 +13,6 @@
 
 using namespace std;
 
-struct entry
-{
-    int key;
-    int value;
-};
-
 class Sst
 {
 public:
@@ -36,7 +30,7 @@ public:
      * Returns:
      * - A vector of key-value pairs that are in the given range.
      */
-    virtual vector<entry> scan(int rangeStart, int rangeEnd) = 0;
+    virtual vector<pair<int, int>> scan(int rangeStart, int rangeEnd) = 0;
 
     virtual ~Sst() = default;
 };

@@ -81,15 +81,13 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
             memcpy(static_cast<char *>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
         }
 
-        // When there are pairs present than the maximum capacity of the page we will it with ignore values
+        // When there are pairs present than the maximum capacity of the page we will fill the next free entry with a tombstone value.
+        // This will indicate that we do not need to process the rest of the page.
         if (pairs_in_this_page < MAX_PAIRS)
         {
-            for (int i = pairs_in_this_page; i < MAX_PAIRS; i++)
-            {
-                pair<int, int> tombstone = {TOMBSTONE_VALUE, TOMBSTONE_VALUE};
-                int offset = i * PAIR_SIZE;
-                memcpy(static_cast<char *>(alignedMemory) + offset, &tombstone, PAIR_SIZE);
-            }
+            pair<int, int> tombstone = {TOMBSTONE_VALUE, TOMBSTONE_VALUE};
+            int offset = pairs_in_this_page * PAIR_SIZE;
+            memcpy(static_cast<char *>(alignedMemory) + offset, &tombstone, PAIR_SIZE);
         }
 
         /**
@@ -156,10 +154,10 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
         char *keyPtr = static_cast<char *>(buffer) + pairOffset;
         char *valuePtr = static_cast<char *>(buffer) + pairOffset + sizeof(int);
 
-        // Skip tombstone values (dereference before comparison)
+        // We have reached a tombstone value so there is no point reading the rest of the page
         if (*(int *)keyPtr == TOMBSTONE_VALUE && *(int *)valuePtr == TOMBSTONE_VALUE)
         {
-            continue;
+            break;
         }
 
         // Copy the key and value into the current_pair

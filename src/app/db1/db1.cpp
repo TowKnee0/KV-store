@@ -77,10 +77,10 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
     // Scan the memtable first
     
 
-    vector<vector<entry>> results;
+    vector<vector<pair<int, int>>> results;
     for (auto &s : sst)
     {
-        vector<entry> entries = s->scan(key1, key2);
+        vector<pair<int, int>> entries = s->scan(key1, key2);
         if (entries.size() != 0)
         {
             results.push_back(entries);
@@ -100,7 +100,7 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
     {
         if (results[i].size() > 0)
         {
-            min_heap.push({results[i].at(0).key, i});
+            min_heap.push({results[i].at(0).first, i});
         }
     }
 
@@ -109,12 +109,12 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
         auto [key, i] = min_heap.top();
         min_heap.pop();
 
-        combined.push_back({key, results[i].at(indexes[i]).value});
+        combined.push_back({key, results[i].at(indexes[i]).second});
         indexes[i]++;
 
         if (indexes[i] < results[i].size())
         {
-            min_heap.push({results[i].at(indexes[i]).key, i});
+            min_heap.push({results[i].at(indexes[i]).first, i});
         }
     }
 

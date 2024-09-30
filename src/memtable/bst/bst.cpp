@@ -166,6 +166,33 @@ void Bst::inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>& v) {
     inOrderHelper(c->right, v);
 }
 
+vector<pair<int, int>> Bst::scan(int rangeStart, int rangeEnd) {
+    vector<pair<int, int>> result;
+    scanHelper(root, rangeStart, rangeEnd, result);
+    return result;
+}
+
+void Bst::scanHelper(shared_ptr<node> c, int rangeStart, int rangeEnd, vector<pair<int, int>>& result) {
+    if (c == nullptr) {
+        return;
+    }
+
+    // There is a possible solution on the left subtree.
+    if (rangeStart < c->key) {
+        scanHelper(c->left, rangeStart, rangeEnd, result);
+    }
+
+    if (rangeStart <= c->key && c->key <= rangeEnd) {
+        result.push_back(make_pair(c->key, c->value));
+    }
+
+    // There is a possible solution on the right subtree
+    if (c->key < rangeEnd) {
+        scanHelper(c->right, rangeStart, rangeEnd, result);
+    }
+}
+
+
 void Bst::clear() {
     root = nullptr;
     c_size = 0;
