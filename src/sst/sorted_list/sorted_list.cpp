@@ -96,12 +96,12 @@ optional<int> SortedList::get(int key)
     return nullopt;
 }
 
-vector<entry> SortedList::scan(int rangeStart, int rangeEnd)
+vector<pair<int, int>> SortedList::scan(int rangeStart, int rangeEnd)
 {
 
     // Step 1: Find out how many pages are in the file.
     int num_pages = io_handler->numPagesInFile(filename);
-    vector<entry> result;
+    vector<pair<int, int>> result;
 
     // Step 2: perform binary search on the page to find the rangeStart.
     // Once we find the page, we can start scanning from there until we reach rangeEnd.
@@ -169,10 +169,7 @@ vector<entry> SortedList::scan(int rangeStart, int rangeEnd)
         // Continue scanning from this point until we reach the end of the page, or we reach rangeEnd.
         while (low < pairs.size() && pairs[low].first < rangeEnd)
         {
-            entry e;
-            e.key = pairs[low].first;
-            e.value = pairs[low].second;
-            result.push_back(e);
+            result.push_back(make_pair(pairs[low].first, pairs[low].second));
             low++;
         }
 
@@ -202,10 +199,7 @@ vector<entry> SortedList::scan(int rangeStart, int rangeEnd)
         int low = 0;
         while (low < pairs.size() && pairs[low].first < rangeEnd)
         {
-            entry e;
-            e.key = pairs[low].first;
-            e.value = pairs[low].second;
-            result.push_back(e);
+            result.push_back(make_pair(pairs[low].first, pairs[low].second));
             low++;
         }
 
