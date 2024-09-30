@@ -101,3 +101,18 @@ TEST(BstTest, ScanRange) {
 
     EXPECT_EQ(b.scan(2, 5), expected);
 }
+
+TEST(BstTest, ScanRangeNothingFound) {
+    Bst b(7);
+    b.put(1, 10);
+    b.put(5, 50);
+    b.put(2, 20);
+    b.put(4, 40);
+    b.put(3, 30);
+    b.put(6, 60);
+    b.put(7, 70);
+
+    vector<pair<int, int>> expected = {};
+
+    EXPECT_EQ(b.scan(12, 36), expected);
+}
