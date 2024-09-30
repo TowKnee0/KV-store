@@ -32,6 +32,7 @@ class Bst: public Memtable {
         void fix(shared_ptr<node> z);
 
         void inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>& v);
+        void scanHelper(shared_ptr<node> c, int rangeStart, int rangeEnd, vector<pair<int, int>>& result); 
     public:
         Bst(int memtable_size);
 
@@ -39,6 +40,7 @@ class Bst: public Memtable {
         optional<int> get(int key);
 
         vector<pair<int, int>> inOrder();
+        vector<pair<int, int>> scan(int rangeStart, int rangeEnd);
 
         int count();
         void clear();
