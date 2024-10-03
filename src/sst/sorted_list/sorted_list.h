@@ -21,8 +21,8 @@ private:
     string filename; // Which file the Sst is stored in
     string dbname;
     shared_ptr<IO> io_handler;
-    optional<int> findPageWithValueEqualToOrGraterThan(int key);
-    optional<pair<pair<int, int>, int>> FindEqualToOrNextLargestInPage(int key, int page);
+    optional<pair<vector<pair<int,int>>,int>> findPageWithValueEqualToOrGraterThan(int key);
+    optional<pair<pair<int, int>, int>> FindEqualToOrNextLargestInPage(int key, vector<pair<int,int>> page);
 
 public:
     SortedList(string filename, string dbname, shared_ptr<IO> io_handler);
