@@ -14,6 +14,7 @@ class Memtable {
         virtual vector<pair<int, int>> inOrder()=0;
         virtual int count()=0;
         virtual void clear()=0;
+        virtual vector<pair<int, int>> scan(int rangeStart, int rangeEnd)=0;
 
         virtual ~Memtable() = default;
 

@@ -75,9 +75,11 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
 {
     
     // Scan the memtable first
+    vector<pair<int, int>> memtable_entries = memtable->scan(key1, key2);
     
-
     vector<vector<pair<int, int>>> results;
+
+    results.push_back(memtable_entries);
     for (auto &s : sst)
     {
         vector<pair<int, int>> entries = s->scan(key1, key2);
