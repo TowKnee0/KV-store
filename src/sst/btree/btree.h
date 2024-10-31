@@ -7,7 +7,12 @@
  * - The existing sorted data can be thought of as contiguously allocated 4kb leaf nodes with no padding
  *   (i.e., there is no spare space in each leaf node to accommodate insertions). 
  * 
- * -
+ * For both get and scan, the binary search over leaves option will search only from the leaves and never go to root or internal node of the B-Tree
+ *
+ * For the other option:
+ * - get() will start from root and go to the corresponding leaf and do a binary search on that leaf,
+ * - scan() will first get() the leaf that may have the lower key walk the B tree until the upper key.
+ *
  */
 #ifndef BTREE_H
 #define BTREE_H
@@ -20,9 +25,11 @@ using namespace std;
 const int BTREE_DEGREE = 4;
 
 // Structure representing a B-Tree node.
+// TODO: Restructure this to use Bulk-Loading instead of starting with an empty tree and inserting an entry for each data record, one at a time which is expensive.
 struct BTreeNode {
     bool isLeaf;                     // True if the node is a leaf
-    vector<pair<int, int>> entries; 
+    vector<int> keys;                // Keys (for internal nodes / delimiters)
+    vector<pair<int, int>> entries;      // Key-value pairs (only for leaf nodes)
     vector<BTreeNode*> children;     // Child pointers (empty if it's a leaf)
 
     // Constructor to initialize a B-Tree node as a leaf or as an internal node
@@ -37,13 +44,11 @@ class BTree {
     public:
         BTree(int degree = BTREE_DEGREE);
 
-        // Build B-Tree using the provided data)
+        // Build B-Tree using the provided data
         void buildBTree(const vector<pair<int, int>>& data);
         
         // Retrieve the value for a given key
         int get(int key);
-
-        // Would need scan too
     };
 
 #endif
