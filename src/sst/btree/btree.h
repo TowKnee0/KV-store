@@ -10,45 +10,31 @@
  * For both get and scan, the binary search over leaves option will search only from the leaves and never go to root or internal node of the B-Tree
  *
  * For the other option:
- * - get() will start from root and go to the corresponding leaf and do a binary search on that leaf,
- * - scan() will first get() the leaf that may have the lower key walk the B tree until the upper key.
+ * - get() will start from root and go to the corresponding leaf and do a binary search on that leaf, [To implement after building internal node logic is done]
+ * - scan() will first get() the leaf that may have the lower key walk the B tree until the upper key. [To implement after building internal node logic is done]
  *
  */
-#ifndef BTREE_H
-#define BTREE_H
-
 #include <vector>
 
 using namespace std;
 
-// Constants for B-Tree degree
-const int BTREE_DEGREE = 4;
-
-// Structure representing a B-Tree node.
-// TODO: Restructure this to use Bulk-Loading instead of starting with an empty tree and inserting an entry for each data record, one at a time which is expensive.
-struct BTreeNode {
-    bool isLeaf;                     // True if the node is a leaf
-    vector<int> keys;                // Keys (for internal nodes / delimiters)
-    vector<pair<int, int>> entries;      // Key-value pairs (only for leaf nodes)
-    vector<BTreeNode*> children;     // Child pointers (empty if it's a leaf)
-
-    // Constructor to initialize a B-Tree node as a leaf or as an internal node
-    BTreeNode(bool leaf) : isLeaf(leaf) {}
-};
-
 class BTree {
-    private:
-        BTreeNode* root;           
-        int degree;                      
-
-    public:
-        BTree(int degree = BTREE_DEGREE);
-
-        // Build B-Tree using the provided data
-        void buildBTree(const vector<pair<int, int>>& data);
-        
-        // Retrieve the value for a given key
-        int get(int key);
-    };
-
-#endif
+private:
+    int PAGE_SIZE = 4096;   // Page size in bytes
+    int ENTRY_SIZE = 8;     // Size of each entry (key-pointer pair)
+    int MAX_ENTRIES = PAGE_SIZE / ENTRY_SIZE;  // Max entries per page
+public:
+    /**
+     * This is going to builds the internal nodes of a B-tree layer-by-layer. It does this by starting from the initial provided leaf pages and building upwards.
+     * 
+     * On any given layer, the internal nodes are represented by a Vector of key-pointer pairs. A pointer links to a child page on the lower layer.
+     * If the internal node is on the bottom-most layer, then the pointer is pointing to a leaf node in which case we would need to do direct I/O.
+     *
+     * Parameters:
+     *  - pages: Leaf nodes, where each vector<pair<int, int>> represents a page of sorted key-value pairs.
+     * 
+     * Returns:
+     *  - A vector of vectors, where each inner vector represents an internal node's key-pointer pairs.
+     */
+    vector<vector<pair<int, int>>> createInternalNodes(vector<vector<pair<int, int>>> pages);
+};
