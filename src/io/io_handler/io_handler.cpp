@@ -19,47 +19,54 @@ using namespace std;
  * If we use plain text we will use up extra space for the delimiters. And the performance is worse anyway.
  * We will write the information in a binary format to be more performant.
  */
-const int PAGE_SIZE = 4096; // 4KB page size.
-const int PAIR_SIZE = sizeof(int) * 2; // Size of one key-value pair (2 integers).
+const int PAGE_SIZE = 4096;                  // 4KB page size.
+const int PAIR_SIZE = sizeof(int) * 2;       // Size of one key-value pair (2 integers).
 const int MAX_PAIRS = PAGE_SIZE / PAIR_SIZE; // Maximum number of pairs that can be stored in a page.
-const int TOMBSTONE_VALUE = INT_MIN; // Special value to indicate an empty key / value.
+const int TOMBSTONE_VALUE = INT_MIN;         // Special value to indicate an empty key / value.
 
-
-IOHandler::IOHandler(const string dbname){
+IOHandler::IOHandler(const string dbname)
+{
     this->dbname = dbname;
 }
 
-int IOHandler::getPageSize() {
+int IOHandler::getPageSize()
+{
     return PAGE_SIZE;
 }
 
-int IOHandler::getPairSize() {
+int IOHandler::getPairSize()
+{
     return PAIR_SIZE;
 }
 
 // Helper function
-string IOHandler::constructFilePath(){
+string IOHandler::constructFilePath()
+{
     return "data/" + dbname + "/"; // Construct the relative path.
 }
 
-string IOHandler::constructFileName(const string filename){
+string IOHandler::constructFileName(const string filename)
+{
     return filename + ".bin";
 }
 
-int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& data) {
-     // Create the directory if it doesn't exist.
+int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &data)
+{
+    // Create the directory if it doesn't exist.
     string fullPath = constructFilePath() + constructFileName(filename);
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
     cout << dirPath << endl;
-    if (!filesystem::exists(dirPath)) {
+    if (!filesystem::exists(dirPath))
+    {
         filesystem::create_directories(dirPath);
     }
-    
-    int data_size = data.size(); 
-    
+
+    int data_size = data.size();
+
     // Create the file if it doesn't exist already and prepare it for Direct I/O + Write Only Access.
     int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY | O_TRUNC, 0644);
-    if (fd < 0) {
+    if (fd < 0)
+    {
         remove(fullPath.c_str());
         return -1;
     }
@@ -76,7 +83,8 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
     int current_idx = 0;
 
     // Write 1 page at a time to disk
-    while (current_idx < data_size) {
+    while (current_idx < data_size)
+    {
         memset(alignedMemory, '\0', PAGE_SIZE);
         int remaining_pairs = data_size - current_idx;
         int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
@@ -84,7 +92,8 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
 
         // Put the current pair we are looking at inside the aligned memory at the correct position
         // We reserved PAIR_SIZE bytes for each pair. So when writing data for a new pair within a page we need to write at an offset of i * PAIR_SIZE.
-        for (int i = 0; i < pairs_in_this_page; i++) {
+        for (int i = 0; i < pairs_in_this_page; i++)
+        {
             const pair<int, int> current_pair = data[current_idx + i];
             int offset = i * PAIR_SIZE;
             memcpy(static_cast<char *>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
@@ -119,27 +128,31 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>>& 
 
     free(alignedMemory);
     close(fd);
-    cout<< "finished writing to file: " << fullPath << endl;
+    cout << "finished writing to file: " << fullPath << endl;
     return 1;
 }
 
 // This function should write the given data to the specified page number in the file.
 // If the data already exists, it overwrites. If there are not that many pages in the file,
 // it should pad the file with empty pages, and write to the specifc page number.
-int IOHandler::writeToFileAtPage(const string filename, const vector<pair<int, int>> &data, int pageNumber) {
+int IOHandler::writeToFileAtPage(const string filename, const vector<pair<int, int>> &data, int pageNumber)
+{
     string fullPath = constructFilePath() + constructFileName(filename);
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
-    if (!filesystem::exists(dirPath)) {
+    if (!filesystem::exists(dirPath))
+    {
         filesystem::create_directories(dirPath);
     }
 
     int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY, 0644);
-    if (fd < 0) {
+    if (fd < 0)
+    {
         return -1;
     }
 
     void *alignedMemory;
-    if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0) {
+    if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0)
+    {
         close(fd);
         return -1;
     }
@@ -147,25 +160,29 @@ int IOHandler::writeToFileAtPage(const string filename, const vector<pair<int, i
     int data_size = data.size();
     int current_idx = 0;
 
-    while (current_idx < data_size) {
+    while (current_idx < data_size)
+    {
         memset(alignedMemory, '\0', PAGE_SIZE);
         int remaining_pairs = data_size - current_idx;
         int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
 
-        for (int i = 0; i < pairs_in_this_page; i++) {
+        for (int i = 0; i < pairs_in_this_page; i++)
+        {
             const pair<int, int> current_pair = data[current_idx + i];
             int offset = i * PAIR_SIZE;
             memcpy(static_cast<char *>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
         }
 
-        if (pairs_in_this_page < MAX_PAIRS) {
+        if (pairs_in_this_page < MAX_PAIRS)
+        {
             pair<int, int> tombstone = {TOMBSTONE_VALUE, TOMBSTONE_VALUE};
             int offset = pairs_in_this_page * PAIR_SIZE;
             memcpy(static_cast<char *>(alignedMemory) + offset, &tombstone, PAIR_SIZE);
         }
 
         int pageAddress = (pageNumber - 1 + current_idx / MAX_PAIRS) * PAGE_SIZE;
-        if (pwrite(fd, alignedMemory, PAGE_SIZE, pageAddress) < 0) {
+        if (pwrite(fd, alignedMemory, PAGE_SIZE, pageAddress) < 0)
+        {
             free(alignedMemory);
             close(fd);
             return -1;
@@ -179,13 +196,15 @@ int IOHandler::writeToFileAtPage(const string filename, const vector<pair<int, i
     return 1;
 }
 
-optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filename, int pageNumber) {
+optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filename, int pageNumber)
+{
     // Calculate the memory address for the page
     size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
     string fullPath = constructFilePath() + constructFileName(filename);
     int fd = open(fullPath.c_str(), O_DIRECT | O_RDONLY);
-    
-    if (fd < 0) {
+
+    if (fd < 0)
+    {
         return nullopt; // Handle error (file doesn't exist or can't be opened)
     }
 
@@ -237,15 +256,18 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
     return pairs; // Return the read key-value pairs.
 }
 
-vector<string> IOHandler::getDbFilenames(){ 
+vector<string> IOHandler::getDbFilenames()
+{
     cout << "getting file names" << endl;
     string filepath = constructFilePath();
 
-    if (!filesystem::exists(filepath)) {
+    if (!filesystem::exists(filepath))
+    {
         return {};
     }
     vector<string> filenames;
-    for (const auto & entry : filesystem::directory_iterator(filepath)) {
+    for (const auto &entry : filesystem::directory_iterator(filepath))
+    {
         filenames.push_back(entry.path().filename());
     }
     cout << "got file names" << endl;
@@ -253,4 +275,4 @@ vector<string> IOHandler::getDbFilenames(){
     return filenames;
 }
 
-int IOHandler::numPagesInFile(const string filename){ return -1;};
+int IOHandler::numPagesInFile(const string filename) { return -1; };

@@ -18,6 +18,9 @@ public:
     MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile, (const string filename, int pageNumber));
     MOCK_METHOD(int, numPagesInFile, (const string filename));
     MOCK_METHOD(vector<string>, getDbFilenames, ());
+    MOCK_METHOD(int, getPageSize, ());
+    MOCK_METHOD(int, getPairSize, ());
+    MOCK_METHOD(int, writeToFileAtPage, (const string filename, (const vector<pair<int, int>> &data), int pageNumber));
 };
 
 TEST(SstTest, WriteTest)
@@ -279,5 +282,4 @@ TEST(SstTest, ScanEmptyRangeTest)
 
     // Check the result
     ASSERT_EQ(result.size(), 0);
-
 }

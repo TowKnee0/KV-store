@@ -30,15 +30,18 @@ public:
     MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile, (const string filename, int pageNumber));
     MOCK_METHOD(int, numPagesInFile, (const string filename));
     MOCK_METHOD((vector<string>), getDbFilenames, ());
+    MOCK_METHOD(int, getPageSize, ());
+    MOCK_METHOD(int, getPairSize, ());
+    MOCK_METHOD(int, writeToFileAtPage, (const string filename, (const vector<pair<int, int>> &data), int pageNumber));
 };
 
 // Mock for SSTs
 class MockSST : public Sst
 {
 public:
-    MOCK_METHOD(int, write, ((const vector<pair<int, int>>) &data));
+    MOCK_METHOD(int, write, ((const vector<pair<int, int>>)&data));
     MOCK_METHOD((optional<int>), get, (int key));
-    MOCK_METHOD((vector<pair<int,int>>), scan, (int rangeStart, int rangeEnd));
+    MOCK_METHOD((vector<pair<int, int>>), scan, (int rangeStart, int rangeEnd));
 };
 
 // Test getting when the data is in the Memtable
@@ -53,7 +56,6 @@ TEST(Db1Test, GetFromMemtable)
     // Create a Db1 instance
     Db1 db1(10);
 
-
     // Set the io_handler to the mock
     db1.io_handler = mockIO;
 
@@ -67,7 +69,7 @@ TEST(Db1Test, GetFromMemtable)
     EXPECT_CALL(*mockMemtable, get(key)).Times(1).WillOnce(Return(value));
 
     db1.memtable = move(mockMemtable);
-    
+
     // Call the get method
     optional<int> result = db1.get(key);
     EXPECT_EQ(result.value(), value.value());
