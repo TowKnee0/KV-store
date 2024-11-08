@@ -109,7 +109,10 @@ void BTree::contructInternalNodes() {
                 // Handle error
             }
             vector<pair<int, int>> leaf_data = leaf_page.value();
-            internal_nodes[element_index] = leaf_data[0];
+
+            // Since we dont store the leaf nodes, we need to shift backwards by the number of leaf nodes.
+            int layer_one_start = layerStartingIndex(1, this->num_data, this->B); 
+            internal_nodes[this_layer_start + element_index - layer_one_start] = leaf_data[0]; // Always the first element.
         }
     }
 }
