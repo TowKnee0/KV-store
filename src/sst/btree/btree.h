@@ -7,6 +7,7 @@
 #include <memory>
 #include "../../io/io.h"
 #include "../sst.h"
+#include <limits>
 
 using namespace std;
 
@@ -18,12 +19,14 @@ private:
     shared_ptr<IO> io_handler;
     int B;
 
-    string INTENRAL_NODE_SUFFIX = "I";
-    string LEAF_NODE_SUFFIX = "L";
-
     // Helpers
-    int num_data_pages = 0;
+    int num_leaf_pages = 0;
     int num_data = 0;
+    int INF = numeric_limits<int>::max();
+
+
+    // Varaibles which need to be found
+    int height = -1;
 
     void contructInternalNodes();
 
