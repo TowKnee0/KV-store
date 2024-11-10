@@ -1,6 +1,7 @@
 #include "ext_hash.h"
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -145,22 +146,22 @@ bool ExtHash::HandleOverflow(uint32_t overflowing_index)
 
     // Loop over all the indicies in the directory and find the indicies which point to the old frame.
     // We then update those indicies to point at a new empty frame.
-    bool new_buckets = false;
+    int count = 0;
     for (int i = 0; i < this->directory.size(); i++)
     {
-        if (this->directory[i] == old_frame && i != overflowing_index)
+        if (this->directory[i] == old_frame)
         {
             this->directory[i] = nullptr;
-            new_buckets = true;
+            count++;
         }
     }
 
     // If we cannot split the current index, return false and let the eviction handle it.
-    if (!new_buckets)
+    if (count < 2)
     {
+        directory[overflowing_index] = old_frame;
         return false;
     }
-
     // Now we need to reinsert all the frames in the old frame into the directory.
     shared_ptr<frame> current_frame = old_frame;
 
@@ -253,7 +254,6 @@ void ExtHash::updateMaximumSizeInPages(int newMaximumSizeInPages)
         // TODO: resize here after evicting
     }
     this->maximumSizeInPages = newMaximumSizeInPages;
-    this->clock.resize(newMaximumSizeInPages);
 }
 
 /**
@@ -295,9 +295,9 @@ void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, in
     }
 
     shared_ptr<frame> new_frame = createFrame(filename, pageNumber, data, dirty);
-    uint32_t index = new_frame->hash & ((1 << directory_bit_size) - 1);
-    insertFrame(new_frame, index, true);
+    uint32_t index = GetIndexFromHashAndBitSize(new_frame->hash, this->directory_bit_size);
     this->evict();
+    insertFrame(new_frame, index, true);
     this->clock[this->curr_hand] = new_frame;
     this->curr_hand = (this->curr_hand + 1) % clock.size();
 
@@ -369,7 +369,9 @@ void ExtHash::shrinkDirectory(int targetNumberOfPages)
     for (int i = 0; i < evict_num; i++)
     {
         this->evict();
+        this->curr_hand = (this->curr_hand + 1) % clock.size();
     }
+    clock.erase(std::remove_if(clock.begin(), clock.end(), [](shared_ptr<frame> p){return p == nullptr;}), clock.end());
 
     this->directory_bit_size = target_directory_bit_size;
     this->maximumSizeInPages = targetNumberOfPages;
@@ -383,7 +385,7 @@ void ExtHash::shrinkDirectory(int targetNumberOfPages)
         while (current_frame != nullptr)
         {
             this->item_count--; // Putting the frame back in will increase the item count, this offsets it.
-            putPage(current_frame->filename, current_frame->pageNumber, current_frame->data, current_frame->dirty);
+            insertFrame(current_frame, GetIndexFromHashAndBitSize(current_frame->hash, target_directory_bit_size), false);
             shared_ptr<frame> next_frame = current_frame->next;
             current_frame->next = nullptr;
             current_frame = next_frame;

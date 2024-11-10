@@ -81,85 +81,50 @@ TEST(ExtHashTest, HandleOverflow)
 
 TEST(ExtHashTest, EvictPage)
 {
-    ExtHash hashTable(2, 2, 0.75, 2);
-
-    string first_index_0 = "none";
-    string first_index_1 = "none";
+    ExtHash hashTable(3, 3, 0.75, 1);
 
     std::string filename1 = "file1";
     int pageNumber1 = 1;
-    std::vector<std::pair<int, int>> data1 = {{1, 100}, {2, 200}};
+    std::vector<std::pair<int, int>> data1 = {{1, 100}};
     hashTable.putPage(filename1, pageNumber1, data1);
-
-    if (hashTable.directory[0] != nullptr)
-    {
-        first_index_0 = hashTable.directory[0]->filename;
-    }
-    else if (hashTable.directory[1] != nullptr)
-    {
-        first_index_1 = hashTable.directory[1]->filename;
-    }
 
     std::string filename2 = "file2";
     int pageNumber2 = 2;
-    std::vector<std::pair<int, int>> data2 = {{3, 300}, {4, 400}};
+    std::vector<std::pair<int, int>> data2 = {{2, 200}};
     hashTable.putPage(filename2, pageNumber2, data2);
-
-    if (hashTable.directory[0] != nullptr && first_index_0 == "none")
-    {
-        first_index_0 = hashTable.directory[0]->filename;
-    }
-    else if (hashTable.directory[1] != nullptr && first_index_1 == "none")
-    {
-        first_index_1 = hashTable.directory[1]->filename;
-    }
 
     std::string filename3 = "file3";
     int pageNumber3 = 3;
-    std::vector<std::pair<int, int>> data3 = {{5, 500}, {6, 600}};
+    std::vector<std::pair<int, int>> data3 = {{3, 300}};
     hashTable.putPage(filename3, pageNumber3, data3);
-
-    if (hashTable.directory[0] != nullptr == true && first_index_0 == "none")
-    {
-        first_index_0 = hashTable.directory[0]->filename;
-    }
-    else if (hashTable.directory[1] != nullptr == true && first_index_1 == "none")
-    {
-        first_index_1 = hashTable.directory[1]->filename;
-    }
 
     std::string filename4 = "file4";
     int pageNumber4 = 4;
-    std::vector<std::pair<int, int>> data4 = {{5, 500}, {6, 600}};
+    std::vector<std::pair<int, int>> data4 = {{4, 400}};
     hashTable.putPage(filename4, pageNumber4, data4);
 
-    if (hashTable.directory[0] != nullptr&& first_index_0 == "none")
-    {
-        first_index_0 = hashTable.directory[0]->filename;
-    }
-    else if (hashTable.directory[1] != nullptr&& first_index_1 == "none")
-    {
-        first_index_1 = hashTable.directory[1]->filename;
-    }
+    hashTable.getPage(filename2, pageNumber2);
 
     std::string filename5 = "file5";
     int pageNumber5 = 5;
-    std::vector<std::pair<int, int>> data5 = {{5, 500}, {6, 600}};
+    std::vector<std::pair<int, int>> data5 = {{5, 500}};
     hashTable.putPage(filename5, pageNumber5, data5);
 
-    if (hashTable.directory[0] != nullptr && first_index_0 == "none")
-    {
-        first_index_0 = hashTable.directory[0]->filename;
-    }
-    else if (hashTable.directory[1] != nullptr && first_index_1 == "none")
-    {
-        first_index_1 = hashTable.directory[1]->filename;
-    }
+    auto retrievedData1 = hashTable.getPage(filename1, pageNumber1);
+    auto retrievedData2 = hashTable.getPage(filename2, pageNumber2);
+    auto retrievedData3 = hashTable.getPage(filename3, pageNumber3);
+    auto retrievedData4 = hashTable.getPage(filename4, pageNumber4);
+    auto retrievedData5 = hashTable.getPage(filename5, pageNumber5);
 
-    bool index_0_same = first_index_0 == hashTable.directory[0]->filename;
-    bool index_1_same = first_index_1 == hashTable.directory[1]->filename;
-    bool atleast_not_one_same = !(index_0_same && index_1_same);
-    ASSERT_TRUE(atleast_not_one_same);
+    ASSERT_FALSE(retrievedData1.has_value());
+    ASSERT_FALSE(retrievedData3.has_value());
+
+    ASSERT_TRUE(retrievedData2.has_value());
+    ASSERT_TRUE(retrievedData4.has_value());
+    ASSERT_TRUE(retrievedData5.has_value());
+    EXPECT_EQ(retrievedData2.value(), data2);
+    EXPECT_EQ(retrievedData4.value(), data4);
+    EXPECT_EQ(retrievedData5.value(), data5);
 }
 
 TEST(ExtHashTest, ShrinkDirectory)
