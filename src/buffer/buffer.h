@@ -9,7 +9,6 @@ using namespace std;
 class Buffer
 {
 private:
-    virtual void evictPage(const string filename, int pageNumber) = 0;
     int minimumSizeInPages;
 
 public:

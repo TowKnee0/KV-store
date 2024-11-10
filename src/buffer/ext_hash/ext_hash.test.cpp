@@ -91,11 +91,11 @@ TEST(ExtHashTest, EvictPage)
     std::vector<std::pair<int, int>> data1 = {{1, 100}, {2, 200}};
     hashTable.putPage(filename1, pageNumber1, data1);
 
-    if (hashTable.directory[0]->frame_in_use == true)
+    if (hashTable.directory[0] != nullptr)
     {
         first_index_0 = hashTable.directory[0]->filename;
     }
-    else if (hashTable.directory[1]->frame_in_use == true)
+    else if (hashTable.directory[1] != nullptr)
     {
         first_index_1 = hashTable.directory[1]->filename;
     }
@@ -105,11 +105,11 @@ TEST(ExtHashTest, EvictPage)
     std::vector<std::pair<int, int>> data2 = {{3, 300}, {4, 400}};
     hashTable.putPage(filename2, pageNumber2, data2);
 
-    if (hashTable.directory[0]->frame_in_use == true && first_index_0 == "none")
+    if (hashTable.directory[0] != nullptr && first_index_0 == "none")
     {
         first_index_0 = hashTable.directory[0]->filename;
     }
-    else if (hashTable.directory[1]->frame_in_use == true && first_index_1 == "none")
+    else if (hashTable.directory[1] != nullptr && first_index_1 == "none")
     {
         first_index_1 = hashTable.directory[1]->filename;
     }
@@ -119,11 +119,11 @@ TEST(ExtHashTest, EvictPage)
     std::vector<std::pair<int, int>> data3 = {{5, 500}, {6, 600}};
     hashTable.putPage(filename3, pageNumber3, data3);
 
-    if (hashTable.directory[0]->frame_in_use == true && first_index_0 == "none")
+    if (hashTable.directory[0] != nullptr == true && first_index_0 == "none")
     {
         first_index_0 = hashTable.directory[0]->filename;
     }
-    else if (hashTable.directory[1]->frame_in_use == true && first_index_1 == "none")
+    else if (hashTable.directory[1] != nullptr == true && first_index_1 == "none")
     {
         first_index_1 = hashTable.directory[1]->filename;
     }
@@ -133,11 +133,11 @@ TEST(ExtHashTest, EvictPage)
     std::vector<std::pair<int, int>> data4 = {{5, 500}, {6, 600}};
     hashTable.putPage(filename4, pageNumber4, data4);
 
-    if (hashTable.directory[0]->frame_in_use == true && first_index_0 == "none")
+    if (hashTable.directory[0] != nullptr&& first_index_0 == "none")
     {
         first_index_0 = hashTable.directory[0]->filename;
     }
-    else if (hashTable.directory[1]->frame_in_use == true && first_index_1 == "none")
+    else if (hashTable.directory[1] != nullptr&& first_index_1 == "none")
     {
         first_index_1 = hashTable.directory[1]->filename;
     }
@@ -147,11 +147,11 @@ TEST(ExtHashTest, EvictPage)
     std::vector<std::pair<int, int>> data5 = {{5, 500}, {6, 600}};
     hashTable.putPage(filename5, pageNumber5, data5);
 
-    if (hashTable.directory[0]->frame_in_use == true && first_index_0 == "none")
+    if (hashTable.directory[0] != nullptr && first_index_0 == "none")
     {
         first_index_0 = hashTable.directory[0]->filename;
     }
-    else if (hashTable.directory[1]->frame_in_use == true && first_index_1 == "none")
+    else if (hashTable.directory[1] != nullptr && first_index_1 == "none")
     {
         first_index_1 = hashTable.directory[1]->filename;
     }
@@ -262,7 +262,7 @@ TEST(ExtHashTest, MaximumPagesLimit)
     for (int i = 0; i < hashTable.directory.size(); i++)
     {
         auto current_frame = hashTable.directory[i];
-        if (current_frame->frame_in_use == false)
+        if (current_frame == nullptr)
         {
             continue;
         }
