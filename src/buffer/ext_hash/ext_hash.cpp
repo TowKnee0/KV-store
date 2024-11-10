@@ -83,6 +83,7 @@ ExtHash::ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_fa
     // Initialize the directory with null pointers.
     this->directory.resize(pow(2, directory_bit_size));
     this->clock.resize(maximumSizeInPages);
+    this->curr_hand = 0;
 }
 
 /**
@@ -298,7 +299,7 @@ void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, in
     insertFrame(new_frame, index, true);
     this->evict();
     this->clock[this->curr_hand] = new_frame;
-    this->curr_hand++;
+    this->curr_hand = (this->curr_hand + 1) % clock.size();
 
     this->item_count++;
     this->checkAndExpand();
