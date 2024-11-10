@@ -1,6 +1,7 @@
 #include "ext_hash.h"
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -32,21 +33,16 @@ uint32_t ExtHash::GetIndexFromHashAndBitSize(xxh::hash_t<32> hash, int bit_size)
  * The function initializes a new frame.
  * If all parameters are default values, the frame is marked as not in use.
  */
-shared_ptr<frame> ExtHash::createFrame(const string filename = "", int pageNumber = -1, vector<pair<int, int>> data = {}, bool dirty = false)
+shared_ptr<frame> ExtHash::createFrame(const string filename, int pageNumber, vector<pair<int, int>> data, bool dirty = false)
 {
     shared_ptr<frame> new_frame = make_shared<frame>();
-    new_frame->frame_in_use = true;
     new_frame->filename = filename;
     new_frame->pageNumber = pageNumber;
     new_frame->data = data;
     new_frame->hash = this->getHash(filename, pageNumber);
     new_frame->dirty = false;
     new_frame->next = nullptr;
-
-    if (filename == "" && pageNumber == -1 && data.size() == 0)
-    {
-        new_frame->frame_in_use = false;
-    }
+    new_frame->recently_used = true;
 
     return new_frame;
 }
@@ -85,12 +81,10 @@ ExtHash::ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_fa
     directory_bit_size = bitSizeForNumberOfPages(minimumSizeInPages, frame_size);
 
     // Resize the directory.
-    // Initialize the directory with empty frames.
-    for (int i = 0; i < pow(2, directory_bit_size); i++)
-    {
-        shared_ptr<frame> empty_frame = this->createFrame();
-        this->directory.push_back(empty_frame);
-    }
+    // Initialize the directory with null pointers.
+    this->directory.resize(pow(2, directory_bit_size));
+    this->clock.resize(maximumSizeInPages);
+    this->curr_hand = 0;
 }
 
 /**
@@ -112,13 +106,6 @@ void ExtHash::checkAndHandleOverflow(int overflow_value, int index)
         {
             return;
         }
-        else
-        {
-            while (IndexIsOverflowing(index))
-            {
-                this->EvictRandom();
-            }
-        }
     }
 }
 
@@ -132,12 +119,8 @@ void ExtHash::checkAndHandleOverflow(int overflow_value, int index)
  */
 bool ExtHash::IndexIsOverflowing(int index)
 {
-    int frame_count = 1;
+    int frame_count = 0;
     shared_ptr<frame> current_frame = this->directory[index];
-    if (current_frame->frame_in_use == false)
-    {
-        return false;
-    }
 
     while (current_frame->next != nullptr)
     {
@@ -163,22 +146,22 @@ bool ExtHash::HandleOverflow(uint32_t overflowing_index)
 
     // Loop over all the indicies in the directory and find the indicies which point to the old frame.
     // We then update those indicies to point at a new empty frame.
-    bool new_buckets = false;
+    int count = 0;
     for (int i = 0; i < this->directory.size(); i++)
     {
         if (this->directory[i] == old_frame)
         {
-            this->directory[i] = this->createFrame();
-            new_buckets = true;
+            this->directory[i] = nullptr;
+            count++;
         }
     }
 
     // If we cannot split the current index, return false and let the eviction handle it.
-    if (!new_buckets)
+    if (count < 2)
     {
+        directory[overflowing_index] = old_frame;
         return false;
     }
-
     // Now we need to reinsert all the frames in the old frame into the directory.
     shared_ptr<frame> current_frame = old_frame;
 
@@ -232,7 +215,7 @@ bool ExtHash::HandleOverflow(uint32_t overflowing_index)
  */
 void ExtHash::insertFrame(shared_ptr<frame> new_frame, uint32_t index, bool check_overflow)
 {
-    if (directory[index]->frame_in_use == false)
+    if (directory[index] == nullptr)
     {
         directory[index] = new_frame;
     }
@@ -268,6 +251,7 @@ void ExtHash::updateMaximumSizeInPages(int newMaximumSizeInPages)
     if (newMaximumSizeInPages < this->maximumSizeInPages)
     {
         this->shrinkDirectory(newMaximumSizeInPages);
+        // TODO: resize here after evicting
     }
     this->maximumSizeInPages = newMaximumSizeInPages;
 }
@@ -302,6 +286,7 @@ void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, in
             {
                 current_frame->data = data;
                 current_frame->dirty = true;
+                current_frame->recently_used = true;
                 return;
             }
             current_frame = current_frame->next;
@@ -309,15 +294,13 @@ void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, in
         return;
     }
 
-    // If we are at maximum capacity, evict a page to make room.
-    if (this->item_count + 1 > this->maximumSizeInPages)
-    {
-        this->EvictRandom();
-    }
-
     shared_ptr<frame> new_frame = createFrame(filename, pageNumber, data, dirty);
-    uint32_t index = new_frame->hash & ((1 << directory_bit_size) - 1);
+    uint32_t index = GetIndexFromHashAndBitSize(new_frame->hash, this->directory_bit_size);
+    this->evict();
     insertFrame(new_frame, index, true);
+    this->clock[this->curr_hand] = new_frame;
+    this->curr_hand = (this->curr_hand + 1) % clock.size();
+
     this->item_count++;
     this->checkAndExpand();
 }
@@ -385,8 +368,10 @@ void ExtHash::shrinkDirectory(int targetNumberOfPages)
     int evict_num = this->item_count - new_posssible_total;
     for (int i = 0; i < evict_num; i++)
     {
-        this->EvictRandom();
+        this->evict();
+        this->curr_hand = (this->curr_hand + 1) % clock.size();
     }
+    clock.erase(std::remove_if(clock.begin(), clock.end(), [](shared_ptr<frame> p){return p == nullptr;}), clock.end());
 
     this->directory_bit_size = target_directory_bit_size;
     this->maximumSizeInPages = targetNumberOfPages;
@@ -397,14 +382,10 @@ void ExtHash::shrinkDirectory(int targetNumberOfPages)
     for (int i = target_number_of_indices; i < current_number_of_indices; i++)
     {
         shared_ptr<frame> current_frame = this->directory[i];
-        if (current_frame->frame_in_use == false)
-        {
-            continue;
-        }
         while (current_frame != nullptr)
         {
             this->item_count--; // Putting the frame back in will increase the item count, this offsets it.
-            putPage(current_frame->filename, current_frame->pageNumber, current_frame->data, current_frame->dirty);
+            insertFrame(current_frame, GetIndexFromHashAndBitSize(current_frame->hash, target_directory_bit_size), false);
             shared_ptr<frame> next_frame = current_frame->next;
             current_frame->next = nullptr;
             current_frame = next_frame;
@@ -438,6 +419,7 @@ optional<vector<pair<int, int>>> ExtHash::getPage(const string filename, int pag
     {
         if (current_frame->hash == hash)
         {
+            current_frame->recently_used = true;
             return current_frame->data;
         }
         current_frame = current_frame->next;
@@ -445,33 +427,30 @@ optional<vector<pair<int, int>>> ExtHash::getPage(const string filename, int pag
     return nullopt;
 }
 
-void ExtHash::evictPage(string filename, int pageNumber)
-{
-    return;
-}
+void ExtHash::evict() {
+    while (this->clock[this->curr_hand] != nullptr && this->clock[this->curr_hand]->recently_used == true) {
+        this->clock[this->curr_hand]->recently_used = false;
+        this->curr_hand = (this->curr_hand + 1) % clock.size();
+    }
 
-// Randomly evict first page of a frame
-void ExtHash::EvictRandom()
-{
-    // Evict a random page from the directory.
-    int random_index = rand() % this->directory.size();
-    shared_ptr<frame> current_frame = this->directory[random_index];
-    while (current_frame->frame_in_use == false)
-    {
-        random_index = rand() % this->directory.size();
-        current_frame = this->directory[random_index];
+    shared_ptr<frame> evicting = this->clock[this->curr_hand];
+    if (evicting == nullptr) {
+        return;
     }
-    // Iterate over the directory to find all indices with the given frame
-    for (int i = 0; i < this->directory.size(); i++)
-    {
-        if (this->directory[i] == current_frame)
-        {
-            this->directory[i] = this->directory[i]->next;
-            if (this->directory[i] == nullptr)
-            {
-                this->directory[i] = this->createFrame();
-            }
-            this->item_count--;
+
+    int idx = GetIndexFromHashAndBitSize(evicting->hash, this->directory_bit_size);
+    if (this->directory[idx] == evicting) {
+        this->directory[idx] = evicting->next;
+    } else {
+        shared_ptr<frame> prev = this->directory[idx];
+        while (prev != nullptr && prev->next != evicting) {
+            prev = prev->next;
         }
+
+        if (prev == nullptr) {
+            throw runtime_error("data loss: page in clock but not directory");
+        }
+        prev->next = prev->next->next;
     }
+    this->clock[this->curr_hand] = nullptr;
 }

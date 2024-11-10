@@ -9,7 +9,7 @@
 using namespace std;
 struct frame
 {
-    bool frame_in_use;
+    bool recently_used;
     vector<pair<int, int>> data;
     string filename;
     int pageNumber;
@@ -32,10 +32,12 @@ private:
     int overflow_count;
     vector<int> indices_with_overflow;
 
+    vector<shared_ptr<frame>> clock;
+    int curr_hand;
+
     int directory_bit_size;
     vector<shared_ptr<frame>> directory;
     // Directory is an array of pointers to a linked list of frames.
-    void evictPage(const string filename, int pageNumber);
     void expandDirectory();
     void shrinkDirectory(int targetNumberOfPages);
 
@@ -53,7 +55,7 @@ private:
     xxh::hash_t<32> getHash(const string filename, int pageNumber);
 
     // Temp evict function
-    void EvictRandom();
+    void evict();
 
 public:
     ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_factor, int frame_size);
