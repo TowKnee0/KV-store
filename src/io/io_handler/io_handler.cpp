@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <climits>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -275,4 +276,17 @@ vector<string> IOHandler::getDbFilenames()
     return filenames;
 }
 
-int IOHandler::numPagesInFile(const string filename) { return -1; };
+size_t getFileSize(const string &filename) {
+    struct stat stat_buf;
+    int rc = stat(filename.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : 0;
+}
+
+int IOHandler::numPagesInFile(const string filename) {
+    string fullPath = constructFilePath() + constructFileName(filename);
+    size_t fileSize = getFileSize(fullPath);
+    if (fileSize == 0) {
+        return -1;
+    }
+    return fileSize / PAGE_SIZE;
+}

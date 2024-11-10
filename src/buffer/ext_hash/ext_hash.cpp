@@ -114,7 +114,7 @@ void ExtHash::checkAndHandleOverflow(int overflow_value, int index)
         }
         else
         {
-            while (!IndexIsOverflowing(index))
+            while (IndexIsOverflowing(index))
             {
                 this->EvictRandom();
             }
@@ -136,7 +136,7 @@ bool ExtHash::IndexIsOverflowing(int index)
     shared_ptr<frame> current_frame = this->directory[index];
     if (current_frame->frame_in_use == false)
     {
-        return true;
+        return false;
     }
 
     while (current_frame->next != nullptr)
@@ -145,7 +145,7 @@ bool ExtHash::IndexIsOverflowing(int index)
         frame_count++;
     }
 
-    return frame_count <= this->frame_size;
+    return frame_count > this->frame_size;
 }
 
 /**
