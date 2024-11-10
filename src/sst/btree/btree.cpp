@@ -79,10 +79,11 @@ void BTree::loadMetadata() {
 }
 
 BTree::BTree(string filename, string dbname, shared_ptr<IO> handler,
-             bool use_binary_search) {
+             bool use_binary_search, shared_ptr<Buffer> buffer) {
   this->use_binary_search = use_binary_search;
   this->filename = filename;
   this->io_handler = handler;
+  this->buffer = buffer;
   this->B = io_handler->getPageSize() / io_handler->getPairSize();
   this->loadMetadata();
 }

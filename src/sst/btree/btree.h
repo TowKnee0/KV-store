@@ -7,6 +7,7 @@
 #include <memory>
 #include "../../io/io.h"
 #include "../sst.h"
+#include "../../buffer/buffer.h"
 #include <limits>
 
 using namespace std;
@@ -17,6 +18,7 @@ private:
     string filename; // Which file the btree is stored in
     string dbname;
     shared_ptr<IO> io_handler;
+    shared_ptr<Buffer> buffer;
     int B;
     bool use_binary_search = false;
     
@@ -50,7 +52,7 @@ private:
     optional<int> binarySearchGet(int key);
 
 public:
-    BTree(string filename, string dbname, shared_ptr<IO> io_handler, bool use_binary_search = false);
+    BTree(string filename, string dbname, shared_ptr<IO> io_handler, bool use_binary_search = false, shared_ptr<Buffer> buffer = nullptr);
     int write(const vector<pair<int, int>> &data);
     optional<int> get(int key); // Search the corresponding value for this key.
 
