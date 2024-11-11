@@ -31,7 +31,7 @@ class Bst: public Memtable {
         void rightRotate(shared_ptr<node> x);
         void fix(shared_ptr<node> z);
 
-        void inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>& v);
+        void inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>* v);
         void scanHelper(shared_ptr<node> c, int rangeStart, int rangeEnd, vector<pair<int, int>>& result); 
     public:
         Bst(int memtable_size);

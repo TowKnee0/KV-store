@@ -150,19 +150,19 @@ optional<int> Bst::get(int key) {
 }
 
 vector<pair<int, int>> Bst::inOrder() {
-    vector<pair<int, int>> v; 
+    vector<pair<int, int>> v(this->c_size); 
 
-    inOrderHelper(root, v);
+    inOrderHelper(root, &v);
     return v;
 }
 
-void Bst::inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>& v) {
+void Bst::inOrderHelper(shared_ptr<node> c, vector<pair<int, int>>* v) {
     if (c == nullptr) {
         return;
     }
 
     inOrderHelper(c->left, v);
-    v.push_back(make_pair(c->key, c->value));
+    v->push_back(make_pair(c->key, c->value));
     inOrderHelper(c->right, v);
 }
 
