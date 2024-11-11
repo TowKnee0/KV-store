@@ -67,7 +67,7 @@ void BTree::loadMetadata() {
   }
   // Metadata is in the last page.
   optional<vector<pair<int, int>>> metadata =
-      this->io_handler->readPageFromFile(this->filename, num_pages);
+      this->buffer->getPage(this->filename, num_pages);
   if (!metadata.has_value()) {
     return;
   };
@@ -79,7 +79,7 @@ void BTree::loadMetadata() {
 }
 
 BTree::BTree(string filename, string dbname, shared_ptr<IO> handler,
-             bool use_binary_search, shared_ptr<Buffer> buffer) {
+             shared_ptr<Buffer> buffer, bool use_binary_search ) {
   this->use_binary_search = use_binary_search;
   this->filename = filename;
   this->io_handler = handler;
@@ -160,7 +160,7 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
 
       // TODO: Get from buffer first.
       optional<vector<pair<int, int>>> leaf_page =
-          this->io_handler->readPageFromFile(this->filename, child_page_number);
+          this->buffer->getPage(this->filename, child_page_number);
       if (!leaf_page.has_value()) {
         // Handle error
       }
@@ -177,7 +177,7 @@ int BTree::searchInPage(int key, int page_location) {
   int page_number =
       floor(static_cast<double>(page_location) / this->B) + 1;  // 1 indexed
   optional<vector<pair<int, int>>> page =
-      this->io_handler->readPageFromFile(this->filename, page_number);
+      this->buffer->getPage(this->filename, page_number);
   if (!page.has_value()) {
     // Handle error
   }
@@ -195,7 +195,7 @@ optional<pair<int, int>> BTree::getItem(int key, int page_location) {
   int page_number =
       floor(static_cast<double>(page_location) / this->B) + 1;  // 1 indexed
   optional<vector<pair<int, int>>> page =
-      this->io_handler->readPageFromFile(this->filename, page_number);
+      this->buffer->getPage(this->filename, page_number);
   if (!page.has_value()) {
     return nullopt;
   }

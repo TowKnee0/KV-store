@@ -52,7 +52,7 @@ private:
     optional<int> binarySearchGet(int key);
 
 public:
-    BTree(string filename, string dbname, shared_ptr<IO> io_handler, bool use_binary_search = false, shared_ptr<Buffer> buffer = nullptr);
+    BTree(string filename, string dbname, shared_ptr<IO> io_handler, shared_ptr<Buffer> buffer, bool use_binary_search = false);
     int write(const vector<pair<int, int>> &data);
     optional<int> get(int key); // Search the corresponding value for this key.
 

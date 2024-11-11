@@ -1,6 +1,6 @@
 enable_testing()
 add_library(ext_hash ext_hash.cpp)
-target_link_libraries(ext_hash)
+target_link_libraries(ext_hash io_handler)
 
 
 add_executable(ext_hash_test ext_hash.test.cpp)

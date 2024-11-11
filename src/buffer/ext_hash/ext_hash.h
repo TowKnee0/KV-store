@@ -1,6 +1,7 @@
 #ifndef EXT_HASH_H
 #define EXT_HASH_H
 #include "../buffer.h"
+#include "../../io/io.h"
 #include "../../../include/xxhash.hpp"
 #include <optional>
 #include <vector>
@@ -27,6 +28,7 @@ private:
     int currentSizeInPages;
     const float expand_factor; // After reaching this value, double the directory size
     const int frame_size;
+    shared_ptr<IO> io_handler;
 
     int item_count;
     int overflow_count;
@@ -58,10 +60,10 @@ private:
     void evict();
 
 public:
-    ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_factor, int frame_size);
+    ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_factor, int frame_size, shared_ptr<IO> io_handler);
     void updateMaximumSizeInPages(int newMaximumSizeInPages);
     void putPage(const string filename, int pageNumber, vector<pair<int, int>> data, bool dirty = false);
-    optional<vector<pair<int, int>>> getPage(const string filename, int pageNumber);
+    optional<vector<pair<int, int>>> getPage(const string filename, int pageNumber, bool read_from_storage = true);
 };
 
 #endif

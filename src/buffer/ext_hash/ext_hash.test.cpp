@@ -4,11 +4,28 @@
 #include <gmock/gmock.h>
 #define private public
 #include "ext_hash.h"
+#include "../../io/io.h"
 using namespace testing;
+
+class MockIOHandler : public IO {
+ public:
+  MOCK_METHOD(int, writeToFile,
+              (const string filename, (const vector<pair<int, int>> &data)));
+  MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile,
+              (const string filename, int pageNumber));
+  MOCK_METHOD(int, numPagesInFile, (const string filename));
+  MOCK_METHOD(vector<string>, getDbFilenames, ());
+  MOCK_METHOD(int, getPageSize, ());
+  MOCK_METHOD(int, getPairSize, ());
+  MOCK_METHOD(int, writeToFileAtPage,
+              (const string filename, (const vector<pair<int, int>> &data),
+               int pageNumber));
+};
 
 TEST(ExtHashTest, PutAndGetPage)
 {
-    ExtHash hashTable(4, 16, 0.75, 2);
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+    ExtHash hashTable(4, 16, 0.75, 2, mockIOHandler);
 
     std::string filename = "testfile";
     int pageNumber = 1;
@@ -24,21 +41,24 @@ TEST(ExtHashTest, PutAndGetPage)
 
 TEST(ExtHashTest, GetNonExistentPage)
 {
-    ExtHash hashTable(4, 16, 0.75, 2);
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+    ExtHash hashTable(4, 16, 0.75, 2, mockIOHandler);
 
     std::string filename = "nonexistentfile";
     int pageNumber = 1;
 
-    auto retrievedData = hashTable.getPage(filename, pageNumber);
+    auto retrievedData = hashTable.getPage(filename, pageNumber, false);
 
     ASSERT_FALSE(retrievedData.has_value());
 }
 
 TEST(ExtHashTest, HandleOverflow)
 {
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+
     // Using a small max page size, we end up getting overflow values which require
     // evicting pages, so we set it high.
-    ExtHash hashTable(2, 32, 0.75, 2);
+    ExtHash hashTable(2, 32, 0.75, 2, mockIOHandler);
 
     std::string filename1 = "file1";
     int pageNumber1 = 1;
@@ -81,7 +101,8 @@ TEST(ExtHashTest, HandleOverflow)
 
 TEST(ExtHashTest, EvictPage)
 {
-    ExtHash hashTable(3, 3, 0.75, 1);
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+    ExtHash hashTable(3, 3, 0.75, 1, mockIOHandler);
 
     std::string filename1 = "file1";
     int pageNumber1 = 1;
@@ -110,11 +131,11 @@ TEST(ExtHashTest, EvictPage)
     std::vector<std::pair<int, int>> data5 = {{5, 500}};
     hashTable.putPage(filename5, pageNumber5, data5);
 
-    auto retrievedData1 = hashTable.getPage(filename1, pageNumber1);
-    auto retrievedData2 = hashTable.getPage(filename2, pageNumber2);
-    auto retrievedData3 = hashTable.getPage(filename3, pageNumber3);
-    auto retrievedData4 = hashTable.getPage(filename4, pageNumber4);
-    auto retrievedData5 = hashTable.getPage(filename5, pageNumber5);
+    auto retrievedData1 = hashTable.getPage(filename1, pageNumber1, false);
+    auto retrievedData2 = hashTable.getPage(filename2, pageNumber2, false);
+    auto retrievedData3 = hashTable.getPage(filename3, pageNumber3, false);
+    auto retrievedData4 = hashTable.getPage(filename4, pageNumber4, false);
+    auto retrievedData5 = hashTable.getPage(filename5, pageNumber5, false);
 
     ASSERT_FALSE(retrievedData1.has_value());
     ASSERT_FALSE(retrievedData3.has_value());
@@ -129,7 +150,9 @@ TEST(ExtHashTest, EvictPage)
 
 TEST(ExtHashTest, ShrinkDirectory)
 {
-    ExtHash hashTable(4, 64, 0.75, 2);
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+
+    ExtHash hashTable(4, 64, 0.75, 2, mockIOHandler);
 
     std::string filename1 = "file1";
     int pageNumber1 = 1;
@@ -166,7 +189,8 @@ TEST(ExtHashTest, ShrinkDirectory)
 
 TEST(ExtHashTest, ShrinkDirectoryBig)
 {
-    ExtHash hashTable(5, 64, 0.75, 1);
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+    ExtHash hashTable(5, 64, 0.75, 1, mockIOHandler);
 
     // Insert 64 pages into the hash table
     for (int i = 1; i <= 64; i++)
@@ -189,7 +213,8 @@ TEST(ExtHashTest, ShrinkDirectoryBig)
 
 TEST(ExtHashTest, MaximumPagesLimit)
 {
-    ExtHash hashTable(2, 2, 0.75, 2);
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+    ExtHash hashTable(2, 2, 0.75, 2, mockIOHandler);
 
     // 2 maximum pages is 1 bit, which is 2 indices, which in theory can support 4 pages,
     // ensure that we only allow 2 pages to be stored.
@@ -242,7 +267,8 @@ TEST(ExtHashTest, MaximumPagesLimit)
 
 TEST(ExtHashTest, UpdatePageSetsDirty)
 {
-    ExtHash hashTable(4, 16, 0.75, 2);
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+    ExtHash hashTable(4, 16, 0.75, 2, mockIOHandler);
 
     std::string filename = "testfile";
     int pageNumber = 1;

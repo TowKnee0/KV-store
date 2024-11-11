@@ -73,8 +73,8 @@ int ExtHash::bitSizeForNumberOfPages(int numberOfPages, int frame_size)
  * @param expand_factor The factor by which the hash table expands.
  * @param frame_size The size of each frame in pages.
  */
-ExtHash::ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_factor, int frame_size)
-    : minimumSizeInPages(minimumSizeInPages), maximumSizeInPages(maximumSizeInPages), currentSizeInPages(minimumSizeInPages), expand_factor(expand_factor), frame_size(frame_size), item_count(0), overflow_count(0)
+ExtHash::ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_factor, int frame_size, shared_ptr<IO> io_handler)
+    : minimumSizeInPages(minimumSizeInPages), maximumSizeInPages(maximumSizeInPages), currentSizeInPages(minimumSizeInPages), expand_factor(expand_factor), frame_size(frame_size), item_count(0), overflow_count(0), io_handler(io_handler)
 {
 
     // Each frame can store a maximum of frame_size pages.
@@ -269,7 +269,7 @@ void ExtHash::updateMaximumSizeInPages(int newMaximumSizeInPages)
 void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, int>> data, bool dirty)
 {
     // If its already in the table, update the data and return.
-    optional<vector<pair<int, int>>> page = this->getPage(filename, pageNumber);
+    optional<vector<pair<int, int>>> page = this->getPage(filename, pageNumber, false);
     if (page.has_value())
     {
         // Nothing to be done
@@ -398,13 +398,15 @@ void ExtHash::shrinkDirectory(int targetNumberOfPages)
 
 /**
  * @brief Retrieves the page data associated with a given filename and page number.
+ * 
+ * If the page is not in the hash table read it from storage.
  *
  * @param filename The name of the file for which the page data is being retrieved.
  * @param pageNumber The page number within the file.
  * @return An optional containing a vector of pairs of integers representing the page data,
  *         or an empty optional if no matching frame is found.
  */
-optional<vector<pair<int, int>>> ExtHash::getPage(const string filename, int pageNumber)
+optional<vector<pair<int, int>>> ExtHash::getPage(const string filename, int pageNumber, bool read_from_storage)
 {
     // Calculate the hash of the filename and pageNumber
     xxh::hash_t<32> hash = this->getHash(filename, pageNumber);
@@ -424,6 +426,19 @@ optional<vector<pair<int, int>>> ExtHash::getPage(const string filename, int pag
         }
         current_frame = current_frame->next;
     }
+    if (!read_from_storage)
+    {
+        return nullopt;
+    }
+
+    // If we reach here, the page is not in the hash table. Try and read it from the file.
+    optional<vector<pair<int, int>>> page = this->io_handler->readPageFromFile(filename, pageNumber);
+    if (page.has_value())
+    {
+        this->putPage(filename, pageNumber, page.value());
+        return page;
+    }
+
     return nullopt;
 }
 
@@ -453,4 +468,7 @@ void ExtHash::evict() {
         prev->next = prev->next->next;
     }
     this->clock[this->curr_hand] = nullptr;
+    if (evicting->dirty) {
+        this->io_handler->writeToFileAtPage(evicting->filename, evicting->data, evicting->pageNumber);
+    }
 }

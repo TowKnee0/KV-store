@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "../../io/io.h"
+#include "../../buffer/ext_hash/ext_hash.h"
+
 
 #define private public
 #include "btree.h"
@@ -34,6 +36,8 @@ class MockIOHandler : public IO {
 TEST(BTreeTest, WriteTest) {
   // Create a mock IOHandler
   shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+  shared_ptr<ExtHash> buffer = make_shared<ExtHash>(5,5,.8,1, mockIOHandler);
+
   string filename = "test_btree";
 
   // Set the getPageSize to be 24, 3 pairs.
@@ -44,7 +48,7 @@ TEST(BTreeTest, WriteTest) {
   EXPECT_CALL(*mockIOHandler, numPagesInFile(filename))
       .WillRepeatedly(Return(-1));
 
-  BTree btree(filename, "test_db", mockIOHandler, false);
+  BTree btree(filename, "test_db", mockIOHandler, buffer, false);
 
   // 100 ints
   vector<int> values = {
@@ -256,279 +260,11 @@ TEST(BTreeTest, WriteTest) {
   }
 }
 
-// TEST(BTreeTest, GetTest)
-// {
-//     // Create a mock IOHandler
-//     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
-//     string filename = "test_btree";
-//     BTree btree(filename, "test_db", mockIOHandler);
-
-//     // Create some data
-//     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
-
-//     // Expect the getNumPagesInFile method to be called once, returning 1
-//     EXPECT_CALL(*mockIOHandler,
-//     numPagesInFile(filename)).WillRepeatedly(Return(1));
-
-//     // Expect the readPageFromFile method to be called once
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     1)).WillRepeatedly(Return(data));
-
-//     // Call the get method
-//     EXPECT_EQ(btree.get(1), 2);
-// }
-
-// TEST(BTreeTest, GetNonExistentKeyTest)
-// {
-//     // Create a mock IOHandler
-//     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
-//     string filename = "test_btree";
-//     BTree btree(filename, "test_db", mockIOHandler);
-
-//     // Create some data
-//     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
-
-//     // Expect the getNumPagesInFile method to be called once, returning 1
-//     EXPECT_CALL(*mockIOHandler,
-//     numPagesInFile(filename)).WillRepeatedly(Return(1));
-
-//     // Expect the readPageFromFile method to be called once
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     1)).WillRepeatedly(Return(data));
-
-//     // Call the get method with a non-existent key
-//     EXPECT_EQ(btree.get(4), nullopt);
-// }
-
-// TEST(BTreeTest, ScanTest)
-// {
-//     // Create a mock IOHandler
-//     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
-//     string filename = "test_btree";
-//     BTree btree(filename, "test_db", mockIOHandler);
-
-//     // Create some data
-//     vector<pair<int, int>> data1 = {{3, 4}, {5, 6}};
-//     vector<pair<int, int>> data2 = {{7, 8}, {9, 10}, {11, 12}};
-//     vector<pair<int, int>> data3 = {{13, 14}, {15, 16}, {17, 18}};
-//     vector<pair<int, int>> data4 = {{19, 20}, {21, 22}, {23, 24}};
-
-//     // Expect the getNumPagesInFile method to be called once, returning 4
-//     EXPECT_CALL(*mockIOHandler,
-//     numPagesInFile(filename)).WillRepeatedly(Return(4));
-
-//     // Expect the readPageFromFile method to be called four times
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     2)).Times(AtLeast(1)).WillRepeatedly(Return(data2));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     1)).Times(AtLeast(1)).WillRepeatedly(Return(data1));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     3)).Times(AtLeast(1)).WillRepeatedly(Return(data3));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     4)).Times(AtLeast(1)).WillRepeatedly(Return(data4));
-
-//     // Call the scan method
-//     vector<pair<int, int>> result = btree.scan(1, 20);
-
-//     // Check the result
-//     ASSERT_EQ(result.size(), 9);
-//     EXPECT_EQ(result.at(0).first, 3);
-//     EXPECT_EQ(result.at(0).second, 4);
-//     EXPECT_EQ(result.at(1).first, 5);
-//     EXPECT_EQ(result.at(1).second, 6);
-//     EXPECT_EQ(result.at(2).first, 7);
-//     EXPECT_EQ(result.at(2).second, 8);
-//     EXPECT_EQ(result.at(3).first, 9);
-//     EXPECT_EQ(result.at(3).second, 10);
-//     EXPECT_EQ(result.at(4).first, 11);
-//     EXPECT_EQ(result.at(4).second, 12);
-//     EXPECT_EQ(result.at(5).first, 13);
-//     EXPECT_EQ(result.at(5).second, 14);
-//     EXPECT_EQ(result.at(6).first, 15);
-//     EXPECT_EQ(result.at(6).second, 16);
-//     EXPECT_EQ(result.at(7).first, 17);
-//     EXPECT_EQ(result.at(7).second, 18);
-//     EXPECT_EQ(result.at(8).first, 19);
-//     EXPECT_EQ(result.at(8).second, 20);
-// }
-
-// TEST(BTreeTest, ScanTest2)
-// {
-//     // Create a mock IOHandler
-//     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
-//     string filename = "test_btree";
-//     BTree btree(filename, "test_db", mockIOHandler);
-
-//     // Create some data
-//     vector<pair<int, int>> data1 = {{3, 4}, {5, 6}};
-//     vector<pair<int, int>> data2 = {{7, 8}, {9, 10}, {11, 12}};
-//     vector<pair<int, int>> data3 = {{13, 14}, {15, 16}, {17, 18}};
-//     vector<pair<int, int>> data4 = {{19, 20}, {21, 22}, {23, 24}};
-
-//     // Expect the getNumPagesInFile method to be called once, returning 4
-//     EXPECT_CALL(*mockIOHandler,
-//     numPagesInFile(filename)).WillRepeatedly(Return(4));
-
-//     // Expect the readPageFromFile method to be called four times
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     2)).Times(AtLeast(1)).WillRepeatedly(Return(data2));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     1)).Times(AtLeast(1)).WillRepeatedly(Return(data1));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     3)).Times(AtLeast(1)).WillRepeatedly(Return(data3));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     4)).Times(AtLeast(1)).WillRepeatedly(Return(data4));
-
-//     // Call the scan method
-//     vector<pair<int, int>> result = btree.scan(6, 20);
-
-//     // Check the result
-//     ASSERT_EQ(result.size(), 7);
-//     EXPECT_EQ(result.at(0).first, 7);
-//     EXPECT_EQ(result.at(0).second, 8);
-//     EXPECT_EQ(result.at(1).first, 9);
-//     EXPECT_EQ(result.at(1).second, 10);
-//     EXPECT_EQ(result.at(2).first, 11);
-//     EXPECT_EQ(result.at(2).second, 12);
-//     EXPECT_EQ(result.at(3).first, 13);
-//     EXPECT_EQ(result.at(3).second, 14);
-//     EXPECT_EQ(result.at(4).first, 15);
-//     EXPECT_EQ(result.at(4).second, 16);
-//     EXPECT_EQ(result.at(5).first, 17);
-//     EXPECT_EQ(result.at(5).second, 18);
-//     EXPECT_EQ(result.at(6).first, 19);
-//     EXPECT_EQ(result.at(6).second, 20);
-// }
-
-// TEST(BTreeTest, ScanTest3)
-// {
-//     // Create a mock IOHandler
-//     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
-//     string filename = "test_btree";
-//     BTree btree(filename, "test_db", mockIOHandler);
-
-//     // Create some data
-//     vector<pair<int, int>> data1 = {{3, 4}, {5, 6}};
-//     vector<pair<int, int>> data2 = {{7, 8}, {9, 10}, {11, 12}};
-//     vector<pair<int, int>> data3 = {{13, 14}, {15, 16}, {17, 18}};
-//     vector<pair<int, int>> data4 = {{19, 20}, {21, 22}, {23, 24}};
-
-//     // Expect the getNumPagesInFile method to be called once, returning 4
-//     EXPECT_CALL(*mockIOHandler,
-//     numPagesInFile(filename)).WillRepeatedly(Return(4));
-
-//     // Expect the readPageFromFile method to be called four times
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     2)).Times(AtLeast(1)).WillRepeatedly(Return(data2));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     3)).Times(AtLeast(1)).WillRepeatedly(Return(data3));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     4)).Times(AtLeast(1)).WillRepeatedly(Return(data4));
-
-//     // Call the scan method
-//     vector<pair<int, int>> result = btree.scan(8, 20);
-
-//     // Check the result
-//     ASSERT_EQ(result.size(), 6);
-//     EXPECT_EQ(result.at(0).first, 9);
-//     EXPECT_EQ(result.at(0).second, 10);
-//     EXPECT_EQ(result.at(1).first, 11);
-//     EXPECT_EQ(result.at(1).second, 12);
-//     EXPECT_EQ(result.at(2).first, 13);
-//     EXPECT_EQ(result.at(2).second, 14);
-//     EXPECT_EQ(result.at(3).first, 15);
-//     EXPECT_EQ(result.at(3).second, 16);
-//     EXPECT_EQ(result.at(4).first, 17);
-//     EXPECT_EQ(result.at(4).second, 18);
-//     EXPECT_EQ(result.at(5).first, 19);
-//     EXPECT_EQ(result.at(5).second, 20);
-// }
-
-// TEST(BTreeTest, ScanTest4)
-// {
-//     // Create a mock IOHandler
-//     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
-//     string filename = "test_btree";
-//     BTree btree(filename, "test_db", mockIOHandler);
-
-//     // Create some data
-//     vector<pair<int, int>> data1 = {{3, 4}, {5, 6}};
-//     vector<pair<int, int>> data2 = {{7, 8}, {9, 10}, {11, 12}};
-//     vector<pair<int, int>> data3 = {{13, 14}, {15, 16}, {17, 18}};
-//     vector<pair<int, int>> data4 = {{19, 20}, {21, 22}, {23, 24}};
-
-//     // Expect the getNumPagesInFile method to be called once, returning 4
-//     EXPECT_CALL(*mockIOHandler,
-//     numPagesInFile(filename)).WillRepeatedly(Return(4));
-
-//     // Expect the readPageFromFile method to be called four times
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     2)).Times(AtLeast(1)).WillRepeatedly(Return(data2));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     3)).Times(AtLeast(1)).WillRepeatedly(Return(data3));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     4)).Times(AtLeast(1)).WillRepeatedly(Return(data4));
-
-//     // Call the scan method
-//     vector<pair<int, int>> result = btree.scan(19, 19);
-
-//     // Check the result
-//     ASSERT_EQ(result.size(), 1);
-//     EXPECT_EQ(result.at(0).first, 19);
-//     EXPECT_EQ(result.at(0).second, 20);
-// }
-
-// TEST(BTreeTest, ScanTest5)
-// {
-//     // Create a mock IOHandler
-//     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
-//     string filename = "test_btree";
-//     BTree btree(filename, "test_db", mockIOHandler);
-
-//     // Create some data
-//     vector<pair<int, int>> data1 = {{3, 4}, {5, 6}};
-//     vector<pair<int, int>> data2 = {{7, 8}, {9, 10}, {11, 12}};
-//     vector<pair<int, int>> data3 = {{13, 14}, {15, 16}, {17, 18}};
-//     vector<pair<int, int>> data4 = {{19, 20}, {21, 22}, {23, 24}};
-
-//     // Expect the getNumPagesInFile method to be called once, returning 4
-//     EXPECT_CALL(*mockIOHandler,
-//     numPagesInFile(filename)).WillRepeatedly(Return(4));
-
-//     // Expect the readPageFromFile method to be called four times
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     1)).Times(AtLeast(1)).WillRepeatedly(Return(data1));
-//     EXPECT_CALL(*mockIOHandler, readPageFromFile(filename,
-//     2)).Times(AtLeast(1)).WillRepeatedly(Return(data2));
-
-//     // Call the scan method
-//     vector<pair<int, int>> result = btree.scan(1, 2);
-
-//     // Check the result
-//     ASSERT_EQ(result.size(), 0);
-// }
-
-// TEST(BTreeTest, ScanEmptyRangeTest)
-// {
-//     // Create a mock IOHandler
-//     shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
-//     string filename = "test_btree";
-//     BTree btree(filename, "test_db", mockIOHandler);
-
-//     // Expect the getNumPagesInFile method to be called once, returning 0
-//     EXPECT_CALL(*mockIOHandler,
-//     numPagesInFile(filename)).Times(1).WillOnce(Return(0));
-
-//     // Call the scan method with an empty range
-//     vector<pair<int, int>> result = btree.scan(1, 6);
-
-//     // Check the result
-//     ASSERT_EQ(result.size(), 0);
-// }
-
 TEST(BTreeTest, GetTest) {
   // Create a mock IOHandler
   shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+  shared_ptr<ExtHash> buffer = make_shared<ExtHash>(5,5,.8,1, mockIOHandler);
+
   string filename = "test_btree";
 
   // Set the getPageSize to be 24, 3 pairs.
@@ -543,7 +279,7 @@ TEST(BTreeTest, GetTest) {
       .WillRepeatedly(Return(
           make_optional<vector<pair<int, int>>>({{0, 3}, {1, 4}, {2, 100}})));
 
-  BTree btree(filename, "test_db", mockIOHandler, false);
+  BTree btree(filename, "test_db", mockIOHandler, buffer, false);
 
   vector<pair<int, int>> expected_b_tree = {{1928, 7},
                                             {4337, 7},
@@ -719,7 +455,9 @@ TEST(BTreeTest, GetTest) {
 
 TEST(BTreeTest, GetTestBinarySearch) {
   // Create a mock IOHandler
+
   shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+  shared_ptr<ExtHash> buffer = make_shared<ExtHash>(5,5,.8,1, mockIOHandler);
   string filename = "test_btree";
 
   // Set the getPageSize to be 24, 3 pairs.
@@ -734,7 +472,7 @@ TEST(BTreeTest, GetTestBinarySearch) {
       .WillRepeatedly(Return(
           make_optional<vector<pair<int, int>>>({{0, 3}, {1, 4}, {2, 100}})));
 
-  BTree btree(filename, "test_db", mockIOHandler, true);
+  BTree btree(filename, "test_db", mockIOHandler, buffer, true);
 
   vector<pair<int, int>> expected_b_tree = {{1928, 7},
                                             {4337, 7},
@@ -911,6 +649,8 @@ TEST(BTreeTest, GetTestBinarySearch) {
 TEST(BTreeTest, ScanTest) {
   // Create a mock IOHandler
   shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+  shared_ptr<ExtHash> buffer = make_shared<ExtHash>(5,5,.8,1, mockIOHandler);
+
   string filename = "test_btree";
 
   // Set the getPageSize to be 24, 3 pairs.
@@ -925,7 +665,7 @@ TEST(BTreeTest, ScanTest) {
       .WillRepeatedly(Return(
           make_optional<vector<pair<int, int>>>({{0, 3}, {1, 4}, {2, 100}})));
 
-  BTree btree(filename, "test_db", mockIOHandler, false);
+  BTree btree(filename, "test_db", mockIOHandler, buffer, false);
 
   vector<pair<int, int>> expected_b_tree = {{1928, 7},
                                             {4337, 7},
@@ -1109,6 +849,8 @@ TEST(BTreeTest, ScanTest) {
 TEST(BTreeTest, ScanTestBinarySearch) {
   // Create a mock IOHandler
   shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+  shared_ptr<ExtHash> buffer = make_shared<ExtHash>(5,5,.8,1, mockIOHandler);
+
   string filename = "test_btree";
 
   // Set the getPageSize to be 24, 3 pairs.
@@ -1123,7 +865,7 @@ TEST(BTreeTest, ScanTestBinarySearch) {
       .WillRepeatedly(Return(
           make_optional<vector<pair<int, int>>>({{0, 3}, {1, 4}, {2, 100}})));
 
-  BTree btree(filename, "test_db", mockIOHandler, true);
+  BTree btree(filename, "test_db", mockIOHandler, buffer, true );
 
   vector<pair<int, int>> expected_b_tree = {{1928, 7},
                                             {4337, 7},
