@@ -50,14 +50,8 @@ TEST(Db1Test, GetFromMemtable)
     // Create a mock Memtable
     unique_ptr<MockMemtable> mockMemtable = make_unique<MockMemtable>();
 
-    // Create a mock IO
-    shared_ptr<MockIO> mockIO = make_shared<MockIO>();
-
     // Create a Db1 instance
     Db1 db1(10);
-
-    // Set the io_handler to the mock
-    db1.io_handler = mockIO;
 
     // Set the key
     int key = 1;
