@@ -4,6 +4,7 @@
 #include "../../memtable/bst/bst.h"
 #include "../../sst/btree/btree.h"
 #include <queue>
+#include <stdexcept>
 #include <iostream>
 
 using namespace std;
@@ -127,6 +128,15 @@ vector<pair<int, int>> Db2::scan(int key1, int key2)
     }
 
     return combined;
+}
+
+void Db2::change_buffer_size(int new_max_page_size)
+{
+    if (new_max_page_size < min_buffer_page_size)
+    {
+        throw runtime_error("new max page size is less than min page size");
+    }
+    buffer->updateMaximumSizeInPages(new_max_page_size);
 }
 
 void Db2::close()
