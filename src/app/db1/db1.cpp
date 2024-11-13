@@ -129,8 +129,4 @@ void Db1::close()
     {
         write_memtable();
     }
-
-    // TODO: do we need to write a metadata file do that we can
-    // instantiate this when we open it again? i.e number of sst's
-    // because we need to instantiate the sst's with dbname and filename
 }
