@@ -38,12 +38,12 @@ private:
     int height = -1;
 
     vector<pair<int, int>> contructInternalNodes();
-    int searchInPage(int key, int page_location);
+    pair<int, pair<int,int>> findKeyInPage(int key, int page_location);
     optional<pair<int, int>> getItem(int key, int page_location);
     void loadMetadata();
     vector<pair<int, int>> constructMetadata();
 
-    int getCloestIndex(int key);
+    int getIndexInBTree(int key);
     optional<int> btreeGet(int key);
 
     // Methods for binary search

@@ -469,6 +469,6 @@ void ExtHash::evict() {
     }
     this->clock[this->curr_hand] = nullptr;
     if (evicting->dirty) {
-        this->io_handler->writeToFileAtPage(evicting->filename, evicting->data, evicting->pageNumber);
+        this->io_handler->writeToFile(evicting->filename, evicting->data, evicting->pageNumber);
     }
 }

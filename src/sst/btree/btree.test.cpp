@@ -21,16 +21,13 @@ using namespace testing;
 class MockIOHandler : public IO {
  public:
   MOCK_METHOD(int, writeToFile,
-              (const string filename, (const vector<pair<int, int>> &data)));
+              (const string filename, (const vector<pair<int, int>> &data), int pageOffset));
   MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile,
               (const string filename, int pageNumber));
   MOCK_METHOD(int, numPagesInFile, (const string filename));
   MOCK_METHOD(vector<string>, getDbFilenames, ());
   MOCK_METHOD(int, getPageSize, ());
   MOCK_METHOD(int, getPairSize, ());
-  MOCK_METHOD(int, writeToFileAtPage,
-              (const string filename, (const vector<pair<int, int>> &data),
-               int pageNumber));
 };
 
 TEST(BTreeTest, WriteTest) {
@@ -70,14 +67,9 @@ TEST(BTreeTest, WriteTest) {
   }
 
   // Expect the writeToFile method to be called once
-  EXPECT_CALL(*mockIOHandler, writeToFile(filename, data))
+  EXPECT_CALL(*mockIOHandler, writeToFile(filename, data, 0))
       .Times(1)
       .WillOnce(Return(1));
-  Sequence s;
-  EXPECT_CALL(*mockIOHandler, numPagesInFile(filename))
-      .InSequence(s)
-      .WillOnce(Return(ceil(100.0 / 3)))
-      .WillOnce(Return(47));
 
   // Mock readPageFromFile calls to return slices of data
   for (int i = 0; i < ceil(double(100) / 3); ++i) {
@@ -239,14 +231,14 @@ TEST(BTreeTest, WriteTest) {
     expected_internal_nodes[i] = expected_b_tree[102 + i];
   }
 
-  // Expect the writeToFileAtPage method to be called to write the internal
+  // Expect the writeToFile method to be called to write the internal
   // nodes
-  EXPECT_CALL(*mockIOHandler, writeToFileAtPage(filename, _, 35))
+  EXPECT_CALL(*mockIOHandler, writeToFile(filename, _, 35))
       .Times(1)
-      .WillOnce(Return(0));
+      .WillRepeatedly(Return(0));
 
-  // Expect the writeToFileAtPage method to be called to write metdata
-  EXPECT_CALL(*mockIOHandler, writeToFileAtPage(filename, _, 48))
+  // Expect the writeToFile method to be called to write metdata
+  EXPECT_CALL(*mockIOHandler, writeToFile(filename, _, 48))
       .Times(1)
       .WillOnce(Return(0));
 

@@ -51,7 +51,7 @@ string IOHandler::constructFileName(const string filename)
     return filename + ".bin";
 }
 
-int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &data)
+int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &data, int pageOffset)
 {
     // Create the directory if it doesn't exist.
     string fullPath = constructFilePath() + constructFileName(filename);
@@ -65,7 +65,7 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &
     int data_size = data.size();
 
     // Create the file if it doesn't exist already and prepare it for Direct I/O + Write Only Access.
-    int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY | O_TRUNC, 0644);
+    int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY, 0644);
     if (fd < 0)
     {
         remove(fullPath.c_str());
@@ -114,7 +114,8 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &
          * Which byte address is this page aligned to: (current_idx / MAX_PAIRS) * PAGE_SIZE
          */
         // Write at the start of the page
-        int pageAddress = (current_idx / MAX_PAIRS) * PAGE_SIZE;
+        int pageAddressOffset = pageOffset > 0 ? (pageOffset - 1 + current_idx / MAX_PAIRS) : (current_idx / MAX_PAIRS);
+        int pageAddress = pageAddressOffset * PAGE_SIZE;
         if (pwrite(fd, alignedMemory, PAGE_SIZE, pageAddress) < 0)
         {
             free(alignedMemory);
@@ -130,70 +131,6 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &
     free(alignedMemory);
     close(fd);
     cout << "finished writing to file: " << fullPath << endl;
-    return 1;
-}
-
-// This function should write the given data to the specified page number in the file.
-// If the data already exists, it overwrites. If there are not that many pages in the file,
-// it should pad the file with empty pages, and write to the specifc page number.
-int IOHandler::writeToFileAtPage(const string filename, const vector<pair<int, int>> &data, int pageNumber)
-{
-    string fullPath = constructFilePath() + constructFileName(filename);
-    filesystem::path dirPath = filesystem::path(fullPath).parent_path();
-    if (!filesystem::exists(dirPath))
-    {
-        filesystem::create_directories(dirPath);
-    }
-
-    int fd = open(fullPath.c_str(), O_CREAT | O_DIRECT | O_WRONLY, 0644);
-    if (fd < 0)
-    {
-        return -1;
-    }
-
-    void *alignedMemory;
-    if (posix_memalign(&alignedMemory, PAGE_SIZE, PAGE_SIZE) != 0)
-    {
-        close(fd);
-        return -1;
-    }
-
-    int data_size = data.size();
-    int current_idx = 0;
-
-    while (current_idx < data_size)
-    {
-        memset(alignedMemory, '\0', PAGE_SIZE);
-        int remaining_pairs = data_size - current_idx;
-        int pairs_in_this_page = (remaining_pairs < MAX_PAIRS) ? remaining_pairs : MAX_PAIRS;
-
-        for (int i = 0; i < pairs_in_this_page; i++)
-        {
-            const pair<int, int> current_pair = data[current_idx + i];
-            int offset = i * PAIR_SIZE;
-            memcpy(static_cast<char *>(alignedMemory) + offset, &current_pair, PAIR_SIZE);
-        }
-
-        if (pairs_in_this_page < MAX_PAIRS)
-        {
-            pair<int, int> tombstone = {TOMBSTONE_VALUE, TOMBSTONE_VALUE};
-            int offset = pairs_in_this_page * PAIR_SIZE;
-            memcpy(static_cast<char *>(alignedMemory) + offset, &tombstone, PAIR_SIZE);
-        }
-
-        int pageAddress = (pageNumber - 1 + current_idx / MAX_PAIRS) * PAGE_SIZE;
-        if (pwrite(fd, alignedMemory, PAGE_SIZE, pageAddress) < 0)
-        {
-            free(alignedMemory);
-            close(fd);
-            return -1;
-        }
-
-        current_idx += pairs_in_this_page;
-    }
-
-    free(alignedMemory);
-    close(fd);
     return 1;
 }
 

@@ -150,7 +150,7 @@ optional<int> Bst::get(int key) {
 }
 
 vector<pair<int, int>> Bst::inOrder() {
-    vector<pair<int, int>> v(this->c_size); 
+    vector<pair<int, int>> v; 
 
     inOrderHelper(root, &v);
     return v;

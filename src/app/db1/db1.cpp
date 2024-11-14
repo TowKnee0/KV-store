@@ -4,6 +4,8 @@
 #include "../../sst/sorted_list/sorted_list.h"
 #include <queue>
 #include <iostream>
+#include <stdexcept>
+
 
 using namespace std;
 

@@ -14,13 +14,12 @@ using namespace testing;
 class MockIOHandler : public IO
 {
 public:
-    MOCK_METHOD(int, writeToFile, (const string filename, (const vector<pair<int, int>> &data)));
+    MOCK_METHOD(int, writeToFile, (const string filename, (const vector<pair<int, int>> &data), int pageNumber));
     MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile, (const string filename, int pageNumber));
     MOCK_METHOD(int, numPagesInFile, (const string filename));
     MOCK_METHOD(vector<string>, getDbFilenames, ());
     MOCK_METHOD(int, getPageSize, ());
     MOCK_METHOD(int, getPairSize, ());
-    MOCK_METHOD(int, writeToFileAtPage, (const string filename, (const vector<pair<int, int>> &data), int pageNumber));
 };
 
 TEST(SstTest, WriteTest)
@@ -34,7 +33,7 @@ TEST(SstTest, WriteTest)
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
 
     // Expect the writeToFile method to be called once
-    EXPECT_CALL(*mockIOHandler, writeToFile(filename, data)).Times(1).WillOnce(Return(1));
+    EXPECT_CALL(*mockIOHandler, writeToFile(filename, data, 0)).Times(1).WillOnce(Return(1));
 
     // Call the write method
     EXPECT_EQ(sortedList.write(data), 0);

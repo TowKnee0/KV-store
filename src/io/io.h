@@ -24,17 +24,7 @@ public:
      *  - filename: the name of the file to write to.
      *  - data: vector of key-value pairs to write into the file named filename.
      */
-    virtual int writeToFile(const string filename, const vector<pair<int, int>> &data) = 0;
-
-    /*
-     * Write key-value pairs to a binary file.
-     * Returns 1 if successful and -1 if unsuccessful.
-     * Parameters:
-     *  - filename: the name of the file to write to.
-     *  - data: vector of key-value pairs to write into the file named filename.
-     * - pageNumber: the page number to write to. Page numbers are 1-indexed.
-     */
-    virtual int writeToFileAtPage(const string filename, const vector<pair<int, int>> &data, int pageNumber) = 0;
+    virtual int writeToFile(const string filename, const vector<pair<int, int>> &data, int pageOffset = 0) = 0;
 
     /*
      * Read a specific page (4KB) of key-value pairs from a binary file.

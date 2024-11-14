@@ -26,13 +26,12 @@ public:
 class MockIO : public IO
 {
 public:
-    MOCK_METHOD(int, writeToFile, (const string filename, (const vector<pair<int, int>> &data)));
+    MOCK_METHOD(int, writeToFile, (const string filename, (const vector<pair<int, int>> &data), int pageOffset));
     MOCK_METHOD((optional<vector<pair<int, int>>>), readPageFromFile, (const string filename, int pageNumber));
     MOCK_METHOD(int, numPagesInFile, (const string filename));
     MOCK_METHOD((vector<string>), getDbFilenames, ());
     MOCK_METHOD(int, getPageSize, ());
     MOCK_METHOD(int, getPairSize, ());
-    MOCK_METHOD(int, writeToFileAtPage, (const string filename, (const vector<pair<int, int>> &data), int pageNumber));
 };
 
 // Mock for SSTs

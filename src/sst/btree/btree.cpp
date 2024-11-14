@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <iostream>
-
+#include <stdexcept>
 #include "../../io/io_handler/io_handler.h"
 
 using namespace std;
@@ -60,6 +60,12 @@ int layerStartingIndex(int layer, int num_keys, int B) {
   return page_index;
 }
 
+/**
+ * @brief Loads the metadata for the B-tree from the last file in the page.
+ *
+ * If the file is not found (no data yet) returns early.
+ *
+ */
 void BTree::loadMetadata() {
   int num_pages = this->io_handler->numPagesInFile(this->filename);
   if (num_pages == -1) {
@@ -78,8 +84,17 @@ void BTree::loadMetadata() {
   this->num_leaf_pages = numNodes(this->num_data, this->B);
 }
 
+/**
+ * @brief Constructs a BTree object.
+ *
+ * @param filename The name of the file where the BTree data is stored.
+ * @param dbname The name of the database.
+ * @param handler A shared pointer to an IO handler.
+ * @param buffer A shared pointer to a Buffer.
+ * @param use_binary_search whether to use binary search.
+ */
 BTree::BTree(string filename, string dbname, shared_ptr<IO> handler,
-             shared_ptr<Buffer> buffer, bool use_binary_search ) {
+             shared_ptr<Buffer> buffer, bool use_binary_search) {
   this->use_binary_search = use_binary_search;
   this->filename = filename;
   this->io_handler = handler;
@@ -88,6 +103,13 @@ BTree::BTree(string filename, string dbname, shared_ptr<IO> handler,
   this->loadMetadata();
 }
 
+/**
+ * @brief Constructs metadata for the BTree.
+ *
+ * Wirtes the branching factor, tree height, and number of leaf nodes to a
+ * vector.
+ * @return A vector of pairs containing the metadata of the BTree.
+ */
 vector<pair<int, int>> BTree::constructMetadata() {
   vector<pair<int, int>> metadata = {
       {this->B_TREE_SIZE_INDEX, this->B},
@@ -96,144 +118,187 @@ vector<pair<int, int>> BTree::constructMetadata() {
   return metadata;
 }
 
+/**
+ * @brief Writes the given data to the B-tree structure and updates the
+ * metadata.
+ *
+ * @param data A vector of key-value pairs to be written to the B-tree.
+ * @return int Returns EXIT_SUCCESS on successful write, otherwise returns
+ * EXIT_FAILURE.
+ */
 int BTree::write(const vector<pair<int, int>> &data) {
+  // Write leafs
   if (io_handler->writeToFile(filename, data) == -1) {
     return EXIT_FAILURE;
   }
 
-  this->num_leaf_pages = io_handler->numPagesInFile(filename);
+  this->num_leaf_pages = ceil(static_cast<double>(data.size()) /
+                              this->B); // io_handler->numPagesInFile(filename);
   this->num_data = data.size();
   this->height = computeHeight(this->num_data, this->B);
 
-  if (io_handler->writeToFileAtPage(this->filename,
-                                    this->contructInternalNodes(),
-                                    this->num_leaf_pages + 1) == -1) {
+  if (io_handler->writeToFile(this->filename, this->contructInternalNodes(),
+                              this->num_leaf_pages + 1) == -1) {
     return EXIT_FAILURE;
   }
-  int total_pages_without_metadata = io_handler->numPagesInFile(this->filename);
-  if (io_handler->writeToFileAtPage(this->filename, this->constructMetadata(),
-                                    total_pages_without_metadata + 1) == -1) {
+  int total_pages_without_metadata =
+      ceil(static_cast<double>(
+               layerStartingIndex(this->height, data.size(), this->B)) /
+           this->B); // io_handler->numPagesInFile(this->filename);
+  if (io_handler->writeToFile(this->filename, this->constructMetadata(),
+                              total_pages_without_metadata + 1) == -1) {
     return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;
 }
 
+/**
+ * @brief Constructs the internal nodes of the B-Tree.
+ *
+ * @return A vector of pairs representing the internal nodes of the B-Tree.
+ */
 vector<pair<int, int>> BTree::contructInternalNodes() {
+  
   // Number of elements would be the first element in the next layer.
+  // Height is 1 indexed.
   int total_btree_size =
       layerStartingIndex(this->height, this->num_data, this->B);
+  
   int internal_btree_size = total_btree_size - (this->num_leaf_pages * this->B);
 
   vector<pair<int, int>> internal_nodes(internal_btree_size,
                                         {this->INF, this->INF});
 
+  // Build up each layer by traversing downnwards down the tree for each element.
   for (int height = 1; height < this->height; height++) {
-    int next_layer_start =
+    int next_layer_index =
         layerStartingIndex(height + 1, this->num_data, this->B);
-    int this_layer_start = layerStartingIndex(height, this->num_data, this->B);
-    int elements_in_this_layer = next_layer_start - this_layer_start;
 
-    for (int element_index = 0; element_index < elements_in_this_layer;
-         element_index++) {
-      int page_index = element_index / (this->B);  // 0 Indexed
-      int page_element_index =
-          element_index - (page_index * this->B);  // 0 indexed.
+    int this_layer_index = layerStartingIndex(height, this->num_data, this->B);
+    int elements_in_this_layer = next_layer_index - this_layer_index;
+
+    // For each position in the current layer, find what it's right child should be to populate it.
+    for (int layer_element_index = 0; layer_element_index < elements_in_this_layer;
+         layer_element_index++) {
+        
+      int page_index = layer_element_index / (this->B); // 0 Indexed
+
+      int element_index_in_page =
+          layer_element_index - (page_index * this->B); // 0 indexed.
+        
       int right_child_page =
-          page_index * (this->B + 1) + page_element_index + 1;
+          page_index * (this->B + 1) + element_index_in_page + 1;
 
       // Keep calculating until we reach the leaf node.
       for (int i = 0; i < height - 1; i++) {
         right_child_page = right_child_page * (this->B + 1);
       }
 
-      // Since we dont store the leaf nodes, we need to shift backwards by the
-      // number of leaf nodes.
-      int layer_one_start = layerStartingIndex(1, this->num_data, this->B);
+      // Since we dont store the leaf nodes, we need to shift backwards by the number of elements in the
+      // leaf nodes.
+      int offset = layerStartingIndex(1, this->num_data, this->B);
+
+      // If the right child is out of bounds set it to infinity.
       if (right_child_page * this->B > this->num_data) {
-        internal_nodes[this_layer_start + element_index - layer_one_start] = {
+        internal_nodes[this_layer_index + layer_element_index - offset] = {
             this->INF, this->INF};
         continue;
       }
 
-      int child_page_number = right_child_page + 1;  // 1 indexed
+      int child_page_number = right_child_page + 1; // add 1 because 1 indexed.
 
-      // TODO: Get from buffer first.
       optional<vector<pair<int, int>>> leaf_page =
           this->buffer->getPage(this->filename, child_page_number);
+      
       if (!leaf_page.has_value()) {
-        // Handle error
+        string error_message = "expecting leaf page to be present at " +
+                               to_string(child_page_number);
+        throw runtime_error(error_message);
+
       }
       vector<pair<int, int>> leaf_data = leaf_page.value();
 
-      internal_nodes[this_layer_start + element_index - layer_one_start] =
-          leaf_data[0];  // Always the first element.
+      internal_nodes[this_layer_index + layer_element_index - offset] =
+          leaf_data[0]; // Always the first element.
     }
   }
   return internal_nodes;
 }
 
-int BTree::searchInPage(int key, int page_location) {
+/**
+ * @brief Finds which index the given key corresponds to within the page.
+ * 
+ * That is, it finds the first index in which key <= btree[index]
+ *
+ * @param key The key to find within the page.
+ * @param page_location The index where the page starts in the btree.
+ * @return A pair of <index, <key, value>>
+ */
+pair<int, pair<int,int>> BTree::findKeyInPage(int key, int page_location) {
   int page_number =
-      floor(static_cast<double>(page_location) / this->B) + 1;  // 1 indexed
+      floor(static_cast<double>(page_location) / this->B) + 1; // 1 indexed
   optional<vector<pair<int, int>>> page =
       this->buffer->getPage(this->filename, page_number);
   if (!page.has_value()) {
-    // Handle error
+    string error_message = "expecting to find key: " + to_string(key) +
+                           " in page: " + to_string(page_number);
+    throw runtime_error(error_message);
   }
   vector<pair<int, int>> data = page.value();
   for (int i = 0; i < this->B; i++) {
     if (key <= data[i].first) {
-      return i;
+      return make_pair(i, data[i]);
     }
   }
-  return this->B;  // If we get here, it means we need the first element of the
-                   // next page.
+  return make_pair(this->B, make_pair(this->INF, this->INF)); // If we get here, it means we need the first element of the
+                  // next page. INF as a placeholder.
 };
 
-optional<pair<int, int>> BTree::getItem(int key, int page_location) {
-  int page_number =
-      floor(static_cast<double>(page_location) / this->B) + 1;  // 1 indexed
-  optional<vector<pair<int, int>>> page =
-      this->buffer->getPage(this->filename, page_number);
-  if (!page.has_value()) {
-    return nullopt;
-  }
-  vector<pair<int, int>> data = page.value();
-  for (int i = 0; i < this->B; i++) {
-    if (data[i].first == key) {
-      return make_pair(data[i].first, data[i].second);
-    }
-  }
-  return nullopt;
-}
-
-int BTree::getCloestIndex(int key) {
-  // Need to ensure that member variables are populated before calling (or get
-  // them now)
+/**
+ * @brief Get the index of the key in the btree. If the key is not present,
+ * it returns the index of the next largest key. (helpful for scanning)
+ *
+ * @param key The key to find in the BTree.
+ * @return int The index of the key or next largest key in the BTree.
+ */
+int BTree::getIndexInBTree(int key) {
   int page_index = 0;
+  // Loop through each layer of the BTree, start at height - 1 since 1 indexed.
+  // Stop at 0 since layer 0 is the leaf layer and is handled differently.
   for (int h = this->height - 1; h > 0; h--) {
-    int current_level_location = layerStartingIndex(h, this->num_data, this->B);
-    int corresponding_key =
-        searchInPage(key, current_level_location + page_index);
-    page_index = page_index * (this->B + 1) + corresponding_key * this->B;
+    int level_index = layerStartingIndex(h, this->num_data, this->B);
+    int corresponding_key_index =
+        findKeyInPage(key, level_index + page_index).first;
+    page_index = page_index * (this->B + 1) + corresponding_key_index * this->B;
   };
 
-  int leaf_page = layerStartingIndex(0, this->num_data, this->B) + page_index;
-  int index_in_leaf_node = searchInPage(key, leaf_page);
+  // Page index is now the leaf index
+  int index_in_leaf_node = findKeyInPage(key, page_index).first;
   return index_in_leaf_node + page_index;
 }
 
+/**
+ * @brief Gets the value associated with the given key in the B-tree.
+ * 
+ * Btree implementation since we also include binary search implementation.
+ * 
+ * @param key The key to search for in the B-tree.
+ * @return An optional containing the value of the key if found,
+ *         otherwise null
+ */
 optional<int> BTree::btreeGet(int key) {
-  int index = getCloestIndex(key);
-  optional<pair<int, int>> result = getItem(key, index);
-  if (result.has_value()) {
-    return result.value().second;
+  int index = getIndexInBTree(key);
+  pair<int, pair<int,int>> result = findKeyInPage(key, index);
+  // If the key is what we are looking for, return the value.
+  // (If the key is not found, it returns the next largest key)
+  if (result.second.first == key) {
+    return result.second.second;
   }
   return nullopt;
 };
 
-// BINARY SEARCH METHODS
+// BINARY SEARCH METHODS COPIED FROM SortedList.cpp
 optional<int> BTree::binarySearchGet(int key) {
   // Find the page which contains the key.
   optional<pair<vector<pair<int, int>>, int>> page_and_num =
@@ -308,8 +373,8 @@ BTree::findPageWithValueEqualToOrGraterThan(int key) {
   return make_pair(pairs, start);
 }
 
-optional<pair<pair<int, int>, int>> BTree::FindEqualToOrNextLargestInPage(
-    int key, vector<pair<int, int>> page) {
+optional<pair<pair<int, int>, int>>
+BTree::FindEqualToOrNextLargestInPage(int key, vector<pair<int, int>> page) {
   int low = 0;
   int high = page.size() - 1;
 
@@ -331,7 +396,14 @@ optional<pair<pair<int, int>, int>> BTree::FindEqualToOrNextLargestInPage(
   return make_pair(page[low], low);
 }
 
-// METHODS
+// SST INTERFACE METHODS
+/**
+ * @brief Gets the value with the given key in the B-tree.
+ *
+ * @param key The key to search for in the B-tree.
+ * @return An optional integer containing the value associated with the key,
+ *         or an empty optional if the key is not found.
+ */
 optional<int> BTree::get(int key) {
   if (this->use_binary_search) {
     return binarySearchGet(key);
@@ -339,7 +411,13 @@ optional<int> BTree::get(int key) {
   return btreeGet(key);
 }
 
-
+/**
+ * @brief Scans the tree for key-value pairs within a specified range.
+ *
+ * @param rangeStart The starting key of the range to scan.
+ * @param rangeEnd The ending key of the range to scan.
+ * @return A vector of key-value pairs where the keys are within the specified range.
+ */
 vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
   vector<pair<int, int>> page_values;
   int index;
@@ -367,8 +445,8 @@ vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
   }
   // Populate variables using B-tree search
   else {
-    int index_in_btree = getCloestIndex(rangeStart);
-    page_num = (index_in_btree / this->B) + 1;  // 1 indexed
+    int index_in_btree = getIndexInBTree(rangeStart);
+    page_num = (index_in_btree / this->B) + 1; // 1 indexed
     index = index_in_btree % this->B;
     page_values = io_handler->readPageFromFile(filename, page_num).value();
   }

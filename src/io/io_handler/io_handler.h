@@ -32,19 +32,9 @@ class IOHandler: public IO {
         * Parameters:
         *  - filename: the name of the file to write to.
         *  - data: vector of key-value pairs to write into the file named filename.
+        *  - pageOffset: the page offset to write to. Page numbers are 1-indexed.
         */
-        int writeToFile(const string filename, const vector<pair<int, int>> &data);
-
-
-        /*
-        * Write key-value pairs to a binary file.
-        * Returns 1 if successful and -1 if unsuccessful.
-        * Parameters:
-        *  - filename: the name of the file to write to.
-        *  - data: vector of key-value pairs to write into the file named filename.
-        * - pageNumber: the page number to write to. Page numbers are 1-indexed.
-        */
-        int writeToFileAtPage(const string filename, const vector<pair<int, int>> &data, int pageNumber);
+        int writeToFile(const string filename, const vector<pair<int, int>> &data, int pageOffset = 0);
 
         /*
         * Read a specific page (4KB) of key-value pairs from a binary file.

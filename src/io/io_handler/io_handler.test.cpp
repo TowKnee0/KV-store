@@ -52,7 +52,7 @@ TEST_F(IOHandlerTest, TestWriteToFile) {
 
 TEST_F(IOHandlerTest, TestWriteToFileAtPage) {
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
-    EXPECT_EQ(ioHandler->writeToFileAtPage(filename, data, 1), 1);
+    EXPECT_EQ(ioHandler->writeToFile(filename, data, 1), 1);
 
     string fullPath = ioHandler->constructFilePath() + ioHandler->constructFileName(filename);
     EXPECT_TRUE(filesystem::exists(fullPath));
@@ -78,24 +78,25 @@ TEST_F(IOHandlerTest, TestGetDbFilenames) {
 
 TEST_F(IOHandlerTest, TestNumPagesInFile) {
     vector<pair<int, int>> data;
-    for (int i = 0; i < ioHandler->getPageSize() / sizeof(pair<int, int>); ++i) {
+    for (int i = 0; i < ioHandler->getPageSize() / 8; ++i) {
         data.push_back({i, i});
     }
 
     for (int i = 1; i < 6; ++i) {
-        ioHandler->writeToFileAtPage(filename, data, i);
+        ioHandler->writeToFile(filename, data, i);
     }
 
     EXPECT_EQ(ioHandler->numPagesInFile(filename), 5);
 }
 TEST_F(IOHandlerTest, TestWriteAndReadFile) {
     vector<pair<int, int>> data;
-    for (int i = 0; i < ioHandler->getPageSize() / sizeof(pair<int, int>); ++i) {
-        data.push_back({i, i});
+    int count = 0;
+    for (int i = 0; i < ioHandler->getPageSize() / 8; ++i) {
+        data.push_back({i, count++});
     }
 
     for (int i = 1; i < 6; ++i) {
-        ioHandler->writeToFileAtPage(filename, data, i);
+        ioHandler->writeToFile(filename, data, i);
     }
 
     // Read the data back and make sure it is correct.
