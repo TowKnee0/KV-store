@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
+
 #include "../../io/io_handler/io_handler.h"
 
 using namespace std;
@@ -78,8 +79,8 @@ void BTree::loadMetadata() {
     return;
   };
   vector<pair<int, int>> metadata_data = metadata.value();
-  this->num_data = metadata_data[this->B_TREE_NUM_DATA_INDEX].second;
-  this->height = metadata_data[this->B_TREE_HEIGHT_INDEX].second;
+  this->num_data = metadata_data[BTree::B_TREE_NUM_DATA_INDEX].second;
+  this->height = metadata_data[BTree::B_TREE_HEIGHT_INDEX].second;
 
   this->num_leaf_pages = numNodes(this->num_data, this->B);
 }
@@ -112,9 +113,9 @@ BTree::BTree(string filename, string dbname, shared_ptr<IO> handler,
  */
 vector<pair<int, int>> BTree::constructMetadata() {
   vector<pair<int, int>> metadata = {
-      {this->B_TREE_SIZE_INDEX, this->B},
-      {this->B_TREE_HEIGHT_INDEX, this->height},
-      {this->B_TREE_NUM_DATA_INDEX, this->num_data}};
+      {BTree::B_TREE_SIZE_INDEX, this->B},
+      {BTree::B_TREE_HEIGHT_INDEX, this->height},
+      {BTree::B_TREE_NUM_DATA_INDEX, this->num_data}};
   return metadata;
 }
 
@@ -132,8 +133,9 @@ int BTree::write(const vector<pair<int, int>> &data) {
     return EXIT_FAILURE;
   }
 
-  this->num_leaf_pages = ceil(static_cast<double>(data.size()) /
-                              this->B); // io_handler->numPagesInFile(filename);
+  this->num_leaf_pages =
+      ceil(static_cast<double>(data.size()) /
+           this->B);  // io_handler->numPagesInFile(filename);
   this->num_data = data.size();
   this->height = computeHeight(this->num_data, this->B);
 
@@ -144,12 +146,179 @@ int BTree::write(const vector<pair<int, int>> &data) {
   int total_pages_without_metadata =
       ceil(static_cast<double>(
                layerStartingIndex(this->height, data.size(), this->B)) /
-           this->B); // io_handler->numPagesInFile(this->filename);
+           this->B);  // io_handler->numPagesInFile(this->filename);
   if (io_handler->writeToFile(this->filename, this->constructMetadata(),
                               total_pages_without_metadata + 1) == -1) {
     return EXIT_FAILURE;
   }
 
+  return EXIT_SUCCESS;
+}
+
+void incrementPointersAndData(int &page_pointer, int &page,
+                              vector<pair<int, int>> &data,
+                              shared_ptr<Buffer> buffer, string filename,
+                              int B) {
+  page_pointer++;
+  if (page_pointer == B) {
+    page++;
+    page_pointer = 0;
+    data = buffer->getPage(filename, page).value();
+  }
+}
+
+void checkAndFlushPageBuffer(vector<pair<int, int>> &page_buffer,
+                             int &new_num_leaf_pages, int B, string filename,
+                             shared_ptr<IO> io_handler) {
+  if (page_buffer.size() == B) {
+    if (io_handler->writeToFile(filename, page_buffer,
+                                new_num_leaf_pages + 1) == -1) {
+      throw runtime_error("Error writing to file");
+    }
+    page_buffer.clear();
+    new_num_leaf_pages++;
+  }
+}
+
+/**
+ * @brief Merges two B-trees from the specified files. Assumes the second
+ * filename corresponds to the newer tree.
+ *
+ * @param filename1 The name of the first file containing a B-tree.
+ * @param filename2 The name of the second file containing a B-tree. This is the
+ * NEWER TREE.
+ * @return returns EXIT_FAILURE or EXIT_SUCCESS.
+ */
+int BTree::mergeBTrees(const string filename1, const string filename2) {
+  int num_pages1 = io_handler->numPagesInFile(filename1);
+  int num_pages2 = io_handler->numPagesInFile(filename2);
+  if (num_pages1 == -1 || num_pages2 == -1) {
+    return EXIT_FAILURE;
+  }
+  // Read the metadata of the two files.
+  optional<vector<pair<int, int>>> metadata1 =
+      this->buffer->getPage(filename1, num_pages1);
+  optional<vector<pair<int, int>>> metadata2 =
+      this->buffer->getPage(filename2, num_pages2);
+  if (!metadata1.has_value() || !metadata2.has_value()) {
+    return EXIT_FAILURE;
+  }
+
+  vector<pair<int, int>> metadata_data1 = metadata1.value();
+  vector<pair<int, int>> metadata_data2 = metadata2.value();
+
+  int num_data_tree1 = metadata_data1[this->B_TREE_NUM_DATA_INDEX].second;
+  int num_data_tree2 = metadata_data2[this->B_TREE_NUM_DATA_INDEX].second;
+
+  int B_tree_1 = metadata_data1[this->B_TREE_SIZE_INDEX].second;
+  int B_tree_2 = metadata_data2[this->B_TREE_SIZE_INDEX].second;
+
+  int num_leaf_pages_tree1 = numNodes(num_data_tree1, B_tree_1);
+  int num_leaf_pages_tree2 = numNodes(num_data_tree2, B_tree_2);
+
+  int tree1_page = 1;
+  int tree1_page_pointer = 0;
+  int tree2_page = 1;
+  int tree2_page_pointer = 0;
+  vector<pair<int, int>> tree1_data =
+      this->buffer->getPage(filename1, tree1_page).value();
+
+  vector<pair<int, int>> tree2_data =
+      this->buffer->getPage(filename2, tree2_page).value();
+  vector<pair<int, int>> page_buffer;
+  int new_num_leaf_pages = 0;
+  int new_num_data = 0;
+
+  while (tree1_page <= num_leaf_pages_tree1 &&
+         tree1_page <= num_leaf_pages_tree2) {
+    if (tree1_data[tree1_page_pointer].first == this->INF) {
+      tree1_page =
+          num_leaf_pages_tree1 + 1;  // Inf is used to pad the end of the page,
+      // so we can skip the rest of the data here. Should only occur at the last
+      // page.
+      break;
+    }
+    if (tree2_data[tree2_page_pointer].first == this->INF) {
+      tree2_page = num_leaf_pages_tree2 + 1;  // same as above
+      break;
+    }
+
+    if (tree1_data[tree1_page_pointer].first <
+        tree2_data[tree2_page_pointer].first) {
+      page_buffer.push_back(tree1_data[tree1_page_pointer]);
+
+      new_num_data++;
+      incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
+                               this->buffer, filename1, this->B);
+    } else {
+      bool same_key = tree1_data[tree1_page_pointer].first ==
+                      tree2_data[tree2_page_pointer].first;
+      page_buffer.push_back(tree2_data[tree2_page_pointer]);
+      new_num_data++;
+      incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
+                               this->buffer, filename2, this->B);
+      if (same_key) {
+        incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
+                                 this->buffer, filename1, this->B);
+      }
+    }
+    checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
+                            this->filename, this->io_handler);
+  }
+
+  // At this point, either both trees have been finished or one of them has been
+  // finished.
+  while (tree1_page <= num_leaf_pages_tree1) {
+    if (tree1_data[tree1_page_pointer].first == this->INF) {
+      break;  // No more useful data.
+    }
+    page_buffer.push_back(tree1_data[tree1_page_pointer]);
+    new_num_data++;
+    incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
+                             this->buffer, filename1, this->B);
+    checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
+                            this->filename, this->io_handler);
+  }
+
+  while (tree2_page <= num_leaf_pages_tree2) {
+    if (tree2_data[tree2_page_pointer].first == this->INF) {
+      break;  // No more useful data.
+    }
+    page_buffer.push_back(tree2_data[tree2_page_pointer]);
+    new_num_data++;
+    incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
+                             this->buffer, filename2, this->B);
+    checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
+                            this->filename, this->io_handler);
+  }
+  // Flush whatever is left in the buffer
+  if (page_buffer.size() > 0) {
+    if (io_handler->writeToFile(this->filename, page_buffer,
+                                new_num_leaf_pages + 1) == -1) {
+      throw runtime_error("Error writing to file");
+    }
+    new_num_leaf_pages++;
+  }
+
+  // Set the new metadata;
+  this->num_data = new_num_data;
+  this->num_leaf_pages = new_num_leaf_pages;
+  this->height = computeHeight(this->num_data, this->B);
+  // construct internal nodes
+  if (io_handler->writeToFile(this->filename, this->contructInternalNodes(),
+                              this->num_leaf_pages + 1) == -1) {
+    return EXIT_FAILURE;
+  }
+
+  // Write the metadata
+  int total_pages_without_metadata =
+      ceil(static_cast<double>(
+               layerStartingIndex(this->height, new_num_data, this->B)) /
+           this->B);
+  if (io_handler->writeToFile(this->filename, this->constructMetadata(),
+                              total_pages_without_metadata + 1) == -1) {
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }
 
@@ -159,18 +328,18 @@ int BTree::write(const vector<pair<int, int>> &data) {
  * @return A vector of pairs representing the internal nodes of the B-Tree.
  */
 vector<pair<int, int>> BTree::contructInternalNodes() {
-  
   // Number of elements would be the first element in the next layer.
   // Height is 1 indexed.
   int total_btree_size =
       layerStartingIndex(this->height, this->num_data, this->B);
-  
+
   int internal_btree_size = total_btree_size - (this->num_leaf_pages * this->B);
 
   vector<pair<int, int>> internal_nodes(internal_btree_size,
                                         {this->INF, this->INF});
 
-  // Build up each layer by traversing downnwards down the tree for each element.
+  // Build up each layer by traversing downnwards down the tree for each
+  // element.
   for (int height = 1; height < this->height; height++) {
     int next_layer_index =
         layerStartingIndex(height + 1, this->num_data, this->B);
@@ -178,15 +347,15 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
     int this_layer_index = layerStartingIndex(height, this->num_data, this->B);
     int elements_in_this_layer = next_layer_index - this_layer_index;
 
-    // For each position in the current layer, find what it's right child should be to populate it.
-    for (int layer_element_index = 0; layer_element_index < elements_in_this_layer;
-         layer_element_index++) {
-        
-      int page_index = layer_element_index / (this->B); // 0 Indexed
+    // For each position in the current layer, find what it's right child should
+    // be to populate it.
+    for (int layer_element_index = 0;
+         layer_element_index < elements_in_this_layer; layer_element_index++) {
+      int page_index = layer_element_index / (this->B);  // 0 Indexed
 
       int element_index_in_page =
-          layer_element_index - (page_index * this->B); // 0 indexed.
-        
+          layer_element_index - (page_index * this->B);  // 0 indexed.
+
       int right_child_page =
           page_index * (this->B + 1) + element_index_in_page + 1;
 
@@ -195,32 +364,31 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
         right_child_page = right_child_page * (this->B + 1);
       }
 
-      // Since we dont store the leaf nodes, we need to shift backwards by the number of elements in the
-      // leaf nodes.
+      // Since we dont store the leaf nodes, we need to shift backwards by the
+      // number of elements in the leaf nodes.
       int offset = layerStartingIndex(1, this->num_data, this->B);
 
       // If the right child is out of bounds set it to infinity.
       if (right_child_page * this->B > this->num_data) {
         internal_nodes[this_layer_index + layer_element_index - offset] = {
-            this->INF, this->INF};
+            BTree::INF, BTree::INF};
         continue;
       }
 
-      int child_page_number = right_child_page + 1; // add 1 because 1 indexed.
+      int child_page_number = right_child_page + 1;  // add 1 because 1 indexed.
 
       optional<vector<pair<int, int>>> leaf_page =
           this->buffer->getPage(this->filename, child_page_number);
-      
+
       if (!leaf_page.has_value()) {
         string error_message = "expecting leaf page to be present at " +
                                to_string(child_page_number);
         throw runtime_error(error_message);
-
       }
       vector<pair<int, int>> leaf_data = leaf_page.value();
 
       internal_nodes[this_layer_index + layer_element_index - offset] =
-          leaf_data[0]; // Always the first element.
+          leaf_data[0];  // Always the first element.
     }
   }
   return internal_nodes;
@@ -228,16 +396,16 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
 
 /**
  * @brief Finds which index the given key corresponds to within the page.
- * 
+ *
  * That is, it finds the first index in which key <= btree[index]
  *
  * @param key The key to find within the page.
  * @param page_location The index where the page starts in the btree.
  * @return A pair of <index, <key, value>>
  */
-pair<int, pair<int,int>> BTree::findKeyInPage(int key, int page_location) {
+pair<int, pair<int, int>> BTree::findKeyInPage(int key, int page_location) {
   int page_number =
-      floor(static_cast<double>(page_location) / this->B) + 1; // 1 indexed
+      floor(static_cast<double>(page_location) / this->B) + 1;  // 1 indexed
   optional<vector<pair<int, int>>> page =
       this->buffer->getPage(this->filename, page_number);
   if (!page.has_value()) {
@@ -251,8 +419,11 @@ pair<int, pair<int,int>> BTree::findKeyInPage(int key, int page_location) {
       return make_pair(i, data[i]);
     }
   }
-  return make_pair(this->B, make_pair(this->INF, this->INF)); // If we get here, it means we need the first element of the
-                  // next page. INF as a placeholder.
+  return make_pair(
+      this->B,
+      make_pair(this->INF,
+                this->INF));  // If we get here, it means we need the first
+                              // element of the next page. INF as a placeholder.
 };
 
 /**
@@ -280,16 +451,16 @@ int BTree::getIndexInBTree(int key) {
 
 /**
  * @brief Gets the value associated with the given key in the B-tree.
- * 
+ *
  * Btree implementation since we also include binary search implementation.
- * 
+ *
  * @param key The key to search for in the B-tree.
  * @return An optional containing the value of the key if found,
  *         otherwise null
  */
 optional<int> BTree::btreeGet(int key) {
   int index = getIndexInBTree(key);
-  pair<int, pair<int,int>> result = findKeyInPage(key, index);
+  pair<int, pair<int, int>> result = findKeyInPage(key, index);
   // If the key is what we are looking for, return the value.
   // (If the key is not found, it returns the next largest key)
   if (result.second.first == key) {
@@ -373,8 +544,8 @@ BTree::findPageWithValueEqualToOrGraterThan(int key) {
   return make_pair(pairs, start);
 }
 
-optional<pair<pair<int, int>, int>>
-BTree::FindEqualToOrNextLargestInPage(int key, vector<pair<int, int>> page) {
+optional<pair<pair<int, int>, int>> BTree::FindEqualToOrNextLargestInPage(
+    int key, vector<pair<int, int>> page) {
   int low = 0;
   int high = page.size() - 1;
 
@@ -416,7 +587,8 @@ optional<int> BTree::get(int key) {
  *
  * @param rangeStart The starting key of the range to scan.
  * @param rangeEnd The ending key of the range to scan.
- * @return A vector of key-value pairs where the keys are within the specified range.
+ * @return A vector of key-value pairs where the keys are within the specified
+ * range.
  */
 vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
   vector<pair<int, int>> page_values;
@@ -446,7 +618,7 @@ vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
   // Populate variables using B-tree search
   else {
     int index_in_btree = getIndexInBTree(rangeStart);
-    page_num = (index_in_btree / this->B) + 1; // 1 indexed
+    page_num = (index_in_btree / this->B) + 1;  // 1 indexed
     index = index_in_btree % this->B;
     page_values = io_handler->readPageFromFile(filename, page_num).value();
   }
