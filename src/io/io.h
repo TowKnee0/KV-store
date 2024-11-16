@@ -53,6 +53,8 @@ public:
      */
     virtual vector<string> getDbFilenames() = 0;
 
+    virtual void del(string filename) = 0;
+
     virtual ~IO() = default;
 
     virtual int getPageSize() = 0;

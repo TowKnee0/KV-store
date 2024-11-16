@@ -15,7 +15,6 @@ using namespace std;
 class BTree : public Sst
 {
 private:
-    string filename; // Which file the btree is stored in
     string dbname;
     shared_ptr<IO> io_handler;
     shared_ptr<Buffer> buffer;
@@ -52,7 +51,10 @@ private:
     optional<int> binarySearchGet(int key);
 
 public:
+    string filename; // Which file the btree is stored in
+
     BTree(string filename, string dbname, shared_ptr<IO> io_handler, shared_ptr<Buffer> buffer, bool use_binary_search = false);
+    void rename(string filename);
     int write(const vector<pair<int, int>> &data);
     optional<int> get(int key); // Search the corresponding value for this key.
     int mergeBTrees(const string filename1, const string filename2);

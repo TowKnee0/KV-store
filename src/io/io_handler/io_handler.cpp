@@ -196,7 +196,6 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
 
 vector<string> IOHandler::getDbFilenames()
 {
-    cout << "getting file names" << endl;
     string filepath = constructFilePath();
 
     if (!filesystem::exists(filepath))
@@ -208,7 +207,6 @@ vector<string> IOHandler::getDbFilenames()
     {
         filenames.push_back(entry.path().filename());
     }
-    cout << "got file names" << endl;
 
     return filenames;
 }
@@ -227,3 +225,5 @@ int IOHandler::numPagesInFile(const string filename) {
     }
     return fileSize / PAGE_SIZE;
 }
+
+void IOHandler::del(string filename) {}

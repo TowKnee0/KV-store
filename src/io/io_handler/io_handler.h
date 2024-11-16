@@ -63,6 +63,8 @@ class IOHandler: public IO {
         */
         vector<string> getDbFilenames();
 
+        void del(string filename);
+
         int getPageSize();
         int getPairSize();
 

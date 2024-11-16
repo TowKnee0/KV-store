@@ -32,6 +32,7 @@ public:
     MOCK_METHOD((vector<string>), getDbFilenames, ());
     MOCK_METHOD(int, getPageSize, ());
     MOCK_METHOD(int, getPairSize, ());
+    MOCK_METHOD(void, del, (string filename));
 };
 
 // Mock for SSTs
