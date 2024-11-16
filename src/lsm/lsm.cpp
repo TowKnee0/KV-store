@@ -61,6 +61,9 @@ void Lsm::del(int key) {
 
 optional<int> Lsm::get(int key) {
     if (int ret = this->memtable->get(key) != nullopt) {
+        if (ret == INT_MIN) {
+            return nullopt;
+        }
         return ret;
     }
 
@@ -70,6 +73,9 @@ optional<int> Lsm::get(int key) {
         }
 
         if (int ret = tree->get(key) != nullopt) {
+            if (ret == INT_MIN) {
+                return nullopt;
+            }
             return ret;
         }
     }
