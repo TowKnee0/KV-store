@@ -640,3 +640,5 @@ vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
 
   return res;
 };
+
+void BTree::rename(string filename) {}
