@@ -189,7 +189,7 @@ void checkAndFlushPageBuffer(vector<pair<int, int>> &page_buffer,
  * NEWER TREE.
  * @return returns EXIT_FAILURE or EXIT_SUCCESS.
  */
-int BTree::mergeBTrees(const string filename1, const string filename2) {
+int BTree::mergeBTrees(string filename1, string filename2) {
   int num_pages1 = io_handler->numPagesInFile(filename1);
   int num_pages2 = io_handler->numPagesInFile(filename2);
   if (num_pages1 == -1 || num_pages2 == -1) {

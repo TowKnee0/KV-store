@@ -1,12 +1,15 @@
 #include "lsm.h"
 #include <algorithm>
 #include <stdexcept>
+#include <iostream>
 
-Lsm::Lsm(string dbname, shared_ptr<Buffer> buffer, shared_ptr<Memtable> memtable, shared_ptr<IO> io) {
+
+Lsm::Lsm(string dbname, shared_ptr<Buffer> buffer, shared_ptr<Memtable> memtable, shared_ptr<IO> io, shared_ptr<BTreeFactory> factory) {
     this->buffer = buffer;
     this->dbname = dbname;
     this->io = io;
     this->memtable = memtable;
+    this->factory = factory;
 }
 
 void Lsm::put(int key, int value) {
@@ -16,43 +19,42 @@ void Lsm::put(int key, int value) {
 
     vector<pair<int, int>> data = this->memtable->inOrder();
     this->memtable->clear();
+    this->memtable->put(key, value);
 
-    BTree temp = BTree("temp", this->dbname, io, this->buffer);
-    temp.write(data);
+    shared_ptr<BTree> temp = this->factory->create("temp", this->dbname, this->io, this->buffer);
+    temp->write(data);
 
     for (int i = 0; i < this->trees.size(); i++) {
         shared_ptr<BTree> tree = this->trees[i];
-        if (tree->filename.find(this->level_prefix) != 0) {
-            throw runtime_error("Invalid BTree name: '" + tree->filename +"' does not contain level_prefix");
-        }
-
         int clevel = i + 1;
-
         // empty level
         if (tree == nullptr) {
             if (this->trees[clevel - 1] != nullptr) {
                 throw runtime_error("Attempt to overwrite existing BTree at index: " + to_string(clevel - 1));
             }
 
-            temp.rename(this->level_prefix + to_string(clevel));
-            this->trees[clevel-1] = make_shared<BTree>(temp);
+            temp->rename(this->level_prefix + to_string(clevel));
+            this->trees[clevel-1] = temp;
             return;
         }
 
+        if (tree->filename.find(this->level_prefix) != 0) {
+            throw runtime_error("Invalid BTree name: '" + tree->filename +"' does not contain level_prefix");
+        }
+
         int tlevel = stoi(tree->filename.substr(this->level_prefix.length()));
-
-        BTree merged = BTree("merged", this->dbname, io, this->buffer);
-        merged.mergeBTrees(tree->filename, temp.filename);
+        shared_ptr<BTree> merged = this->factory->create("merged", this->dbname, this->io, this->buffer);
+        merged->mergeBTrees(tree->filename, temp->filename);
         
-        io->del(temp.filename);
+        io->del(temp->filename);
         io->del(tree->filename);
+        this->trees[tlevel-1] = nullptr;
 
-        merged.rename("temp");
+        merged->rename("temp");
         temp = merged;
     }
-
-    temp.rename(this->level_prefix + to_string(this->trees.size()+1));
-    this->trees.push_back(make_shared<BTree>(temp));
+    temp->rename(this->level_prefix + to_string(this->trees.size()+1));
+    this->trees.push_back(temp);
 }
 
 void Lsm::del(int key) {
@@ -110,7 +112,8 @@ void Lsm::load() {
         if (this->trees.size() < tlevel) {
             this->trees.resize(tlevel);
         }
-        this->trees[tlevel - 1] = make_shared<BTree>(f, this->dbname, this->io, this->buffer); 
+        shared_ptr<BTree> tree = this->factory->create(f, this->dbname, this->io, this->buffer);
+        this->trees[tlevel - 1] = tree;
     }
 }
 

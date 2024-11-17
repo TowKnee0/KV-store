@@ -5,8 +5,10 @@
 #include <vector>
 #include "../sst/btree/btree.h"
 #include "../memtable/memtable.h"
+#include "../sst/btree/factory.h"
 #include "../io/io.h"
 #include <limits.h>
+#include <gtest/gtest.h>
 
 class Lsm {
     private:
@@ -15,18 +17,23 @@ class Lsm {
         int sentinel = INT_MIN;
         string level_prefix = "L";
 
+        shared_ptr<BTreeFactory> factory;
         vector<shared_ptr<BTree>> trees;
         shared_ptr<Buffer> buffer;
         shared_ptr<Memtable> memtable;
         shared_ptr<IO> io;
 
+        FRIEND_TEST(LsmTest, PutHandlesBTreeMerge);
+        FRIEND_TEST(LsmTest, PutfreeSpot);
+
     public:
-        Lsm(string dbname, shared_ptr<Buffer> buffer, shared_ptr<Memtable> memtable,  shared_ptr<IO> io);
+        Lsm(string dbname, shared_ptr<Buffer> buffer, shared_ptr<Memtable> memtable,  shared_ptr<IO> io, shared_ptr<BTreeFactory> factory);
         void put(int key, int value);
         optional<int> get(int key);
         void del(int key);
         void load();
         void save();
-};
+    };
 
 #endif
+

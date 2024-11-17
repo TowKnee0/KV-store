@@ -54,11 +54,11 @@ public:
     string filename; // Which file the btree is stored in
 
     BTree(string filename, string dbname, shared_ptr<IO> io_handler, shared_ptr<Buffer> buffer, bool use_binary_search = false);
-    void rename(string filename);
-    int write(const vector<pair<int, int>> &data);
-    optional<int> get(int key); // Search the corresponding value for this key.
-    int mergeBTrees(const string filename1, const string filename2);
-    vector<pair<int, int>> scan(int rangeStart, int rangeEnd);
+    virtual void rename(string filename);
+    virtual int write(const vector<pair<int, int>> &data);
+    virtual optional<int> get(int key); // Search the corresponding value for this key.
+    virtual int mergeBTrees(string filename1, string filename2);
+    virtual vector<pair<int, int>> scan(int rangeStart, int rangeEnd);
 };
 
 #endif

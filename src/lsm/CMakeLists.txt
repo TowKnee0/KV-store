@@ -1,7 +1,7 @@
 enable_testing()
 
 add_library(lsm lsm.cpp)
-target_link_libraries(lsm btree)
+target_link_libraries(lsm btree GTest::gtest GTest::gtest_main)
 
 add_executable(lsm_test lsm.test.cpp)
 target_link_libraries(lsm_test PRIVATE lsm GTest::gtest_main gmock)
