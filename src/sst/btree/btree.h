@@ -8,6 +8,7 @@
 #include "../../io/io.h"
 #include "../sst.h"
 #include "../../buffer/buffer.h"
+#include "../../filter/filter.h"
 #include <limits>
 
 using namespace std;
@@ -18,6 +19,8 @@ private:
     string dbname;
     shared_ptr<IO> io_handler;
     shared_ptr<Buffer> buffer;
+    // Filters are optional as part 2 doesn't have them.
+    shared_ptr<Filter> filter;
     int B;
     bool use_binary_search = false;
     
@@ -53,7 +56,7 @@ private:
 public:
     string filename; // Which file the btree is stored in
 
-    BTree(string filename, string dbname, shared_ptr<IO> io_handler, shared_ptr<Buffer> buffer, bool use_binary_search = false);
+    BTree(string filename, string dbname, shared_ptr<IO> io_handler, shared_ptr<Buffer> buffer, bool use_binary_search = false, shared_ptr<Filter> filter = nullptr);
     virtual void rename(string filename);
     virtual int write(const vector<pair<int, int>> &data);
     virtual optional<int> get(int key); // Search the corresponding value for this key.

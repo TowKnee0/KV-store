@@ -4,12 +4,13 @@
 #include <iostream>
 
 
-Lsm::Lsm(string dbname, shared_ptr<Buffer> buffer, shared_ptr<Memtable> memtable, shared_ptr<IO> io, shared_ptr<BTreeFactory> factory) {
+Lsm::Lsm(string dbname, shared_ptr<Buffer> buffer, shared_ptr<Memtable> memtable, shared_ptr<IO> io, shared_ptr<BTreeFactory> factory, int filter_size_in_bits) {
     this->buffer = buffer;
     this->dbname = dbname;
     this->io = io;
     this->memtable = memtable;
     this->factory = factory;
+    this->filter_size_in_bits = filter_size_in_bits;
 }
 
 void Lsm::put(int key, int value) {
@@ -21,7 +22,7 @@ void Lsm::put(int key, int value) {
     this->memtable->clear();
     this->memtable->put(key, value);
 
-    shared_ptr<BTree> temp = this->factory->create("temp", this->dbname, this->io, this->buffer);
+    shared_ptr<BTree> temp = this->factory->create("temp", this->dbname, this->io, this->buffer, make_shared<BloomFilter>(this->filter_size_in_bits));
     temp->write(data);
 
     for (int i = 0; i < this->trees.size(); i++) {
@@ -43,7 +44,7 @@ void Lsm::put(int key, int value) {
         }
 
         int tlevel = stoi(tree->filename.substr(this->level_prefix.length()));
-        shared_ptr<BTree> merged = this->factory->create("merged", this->dbname, this->io, this->buffer);
+        shared_ptr<BTree> merged = this->factory->create("merged", this->dbname, this->io, this->buffer, make_shared<BloomFilter>(this->filter_size_in_bits));
         merged->mergeBTrees(tree->filename, temp->filename);
         
         io->del(temp->filename);
@@ -112,7 +113,7 @@ void Lsm::load() {
         if (this->trees.size() < tlevel) {
             this->trees.resize(tlevel);
         }
-        shared_ptr<BTree> tree = this->factory->create(f, this->dbname, this->io, this->buffer);
+        shared_ptr<BTree> tree = this->factory->create(f, this->dbname, this->io, this->buffer, make_shared<BloomFilter>(this->filter_size_in_bits));
         this->trees[tlevel - 1] = tree;
     }
 }

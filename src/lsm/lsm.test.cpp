@@ -58,7 +58,7 @@ public:
 
 class MockBTreeFactory : public BTreeFactory {
 public:
-    MOCK_METHOD(shared_ptr<BTree>, create, (string name, string dbname, shared_ptr<IO> io, shared_ptr<Buffer> buffer));
+    MOCK_METHOD(shared_ptr<BTree>, create, (string name, string dbname, shared_ptr<IO> io, shared_ptr<Buffer> buffer, shared_ptr<Filter> filter));
 };
 
 
@@ -137,11 +137,11 @@ TEST(LsmTest, PutHandlesBTreeMerge) {
     auto mockBTree2 = make_shared<MockBTree>("temp", "test_db", mockIO, mockBuffer);
     auto mockBTree3 = make_shared<MockBTree>("merged", "test_db", mockIO, mockBuffer);
 
-    EXPECT_CALL(*mockFactory, create("temp", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer)))
+    EXPECT_CALL(*mockFactory, create("temp", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer), _))
         .WillOnce(Return(mockBTree2));
     EXPECT_CALL(*mockBTree2, write(vector<pair<int, int>>{{1, 100}}))
         .Times(1);
-    EXPECT_CALL(*mockFactory, create("merged", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer)))
+    EXPECT_CALL(*mockFactory, create("merged", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer), _))
         .WillOnce(Return(mockBTree3));
 
     EXPECT_CALL(*mockBTree3, mergeBTrees("L1", "temp"))
@@ -159,7 +159,7 @@ TEST(LsmTest, PutHandlesBTreeMerge) {
             mockBTree3->filename = name;
         });
 
-    Lsm lsm("test_db", mockBuffer, mockMemtable, mockIO, mockFactory);
+    Lsm lsm("test_db", mockBuffer, mockMemtable, mockIO, mockFactory, 10);
     lsm.trees.push_back(mockBTree1); // Simulate an existing BTree in level 1.
 
     EXPECT_NO_THROW(lsm.put(1, 100));
@@ -196,11 +196,11 @@ TEST(LsmTest, PutfreeSpot) {
     auto mockBTree3 = make_shared<MockBTree>("merged", "test_db", mockIO, mockBuffer);
     auto mockBTree4 = make_shared<MockBTree>("L3", "test_db", mockIO, mockBuffer);
 
-    EXPECT_CALL(*mockFactory, create("temp", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer)))
+    EXPECT_CALL(*mockFactory, create("temp", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer), _))
         .WillOnce(Return(mockBTree2));
     EXPECT_CALL(*mockBTree2, write(vector<pair<int, int>>{{1, 100}}))
         .Times(1);
-    EXPECT_CALL(*mockFactory, create("merged", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer)))
+    EXPECT_CALL(*mockFactory, create("merged", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer), _))
         .WillOnce(Return(mockBTree3));
 
     EXPECT_CALL(*mockBTree3, mergeBTrees("L1", "temp"))
@@ -218,7 +218,7 @@ TEST(LsmTest, PutfreeSpot) {
             mockBTree3->filename = name;
         });
 
-    Lsm lsm("test_db", mockBuffer, mockMemtable, mockIO, mockFactory);
+    Lsm lsm("test_db", mockBuffer, mockMemtable, mockIO, mockFactory, 10);
     lsm.trees.push_back(mockBTree1); // Simulate an existing BTree in level 1.
     lsm.trees.push_back(nullptr);
     lsm.trees.push_back(mockBTree4);

@@ -10,6 +10,7 @@
 
 #include "../../buffer/ext_hash/ext_hash.h"
 #include "../../io/io.h"
+#include "../../filter/filter.h"
 
 #define private public
 #include "btree.h"
@@ -47,6 +48,12 @@ vector<pair<int, int>> expected_b_tree = {
     {68558, 7}, {71235, 7}, {76509, 7}, {82843, 7}, {84824, 7}, {89514, 7}, {90061, 7}, {95409, 10}, {99792, 7},
     {BTree::INF, BTree::INF}, {BTree::INF, BTree::INF}, {15251, 7}, {24053, 7}, {35523, 7}, {59808, 7}, {74208, 7}, {85790, 7},
     {BTree::INF, BTree::INF}, {BTree::INF, BTree::INF}, {BTree::INF, BTree::INF}, {43450, 7}, {96724, 7}, {BTree::INF, BTree::INF}
+};
+
+class MockFilter : public Filter {
+ public:
+  MOCK_METHOD(void, addKey, (int key));
+  MOCK_METHOD(bool, hasKey, (int key));
 };
 
 TEST(BTreeTest, WriteTest) {
@@ -561,6 +568,7 @@ TEST(BTreeTest, MergeBTreesTest) {
         .WillRepeatedly(Return(data_slice));
   }
 
+  shared_ptr<MockFilter> MockedFilter = make_shared<MockFilter>();
   string filename3 = "test_btree_merged";
   EXPECT_CALL(*mockIOHandler, numPagesInFile(filename3))
       .WillRepeatedly(Return(-1));
@@ -618,6 +626,8 @@ TEST(BTreeTest, MergeBTreesTest) {
           data_slice.resize(j);
           break;
         }
+        EXPECT_CALL(*MockedFilter, addKey(data_slice[j].first))
+          .Times(1);
       }
 
       EXPECT_CALL(*mockIOHandler, writeToFile(filename3, data_slice, i + 1))
@@ -643,7 +653,7 @@ TEST(BTreeTest, MergeBTreesTest) {
   for (int i = 0; i < 72; i++) {
     expected_internal_nodes[i] = expected_b_tree3[201 + i];
   }
-  BTree btree_merged = BTree(filename3, "test_db", mockIOHandler, buffer, true);
+  BTree btree_merged = BTree(filename3, "test_db", mockIOHandler, buffer, true, MockedFilter);
   btree_merged.mergeBTrees(filename, filename2);
   
   vector<pair<int, int>> internal_nodes = btree_merged.contructInternalNodes();

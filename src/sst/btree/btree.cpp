@@ -95,11 +95,12 @@ void BTree::loadMetadata() {
  * @param use_binary_search whether to use binary search.
  */
 BTree::BTree(string filename, string dbname, shared_ptr<IO> handler,
-             shared_ptr<Buffer> buffer, bool use_binary_search) {
+             shared_ptr<Buffer> buffer, bool use_binary_search, shared_ptr<Filter> filter) {
   this->use_binary_search = use_binary_search;
   this->filename = filename;
   this->io_handler = handler;
   this->buffer = buffer;
+  this->filter = filter;
   this->B = io_handler->getPageSize() / io_handler->getPairSize();
   this->loadMetadata();
 }
@@ -131,6 +132,15 @@ int BTree::write(const vector<pair<int, int>> &data) {
   // Write leafs
   if (io_handler->writeToFile(filename, data) == -1) {
     return EXIT_FAILURE;
+  }
+
+
+  // If we have a filter, add all the keys to the filter.
+  // Part 3 only.
+  if (this->filter != nullptr) {
+    for (auto &pair : data) {
+      this->filter->addKey(pair.first);
+    }
   }
 
   this->num_leaf_pages =
@@ -167,6 +177,15 @@ void incrementPointersAndData(int &page_pointer, int &page,
   }
 }
 
+void addDataToBuffer(vector<pair<int, int>> &page_buffer,
+                     vector<pair<int, int>> &page, int page_pointer, Filter &filter, int &num_data) {
+  page_buffer.push_back(page[page_pointer]);
+  // Merge should only be used in part 3, and therefore a filter should
+  // always be present.
+  filter.addKey(page[page_pointer].first);
+  num_data++;
+}
+
 void checkAndFlushPageBuffer(vector<pair<int, int>> &page_buffer,
                              int &new_num_leaf_pages, int B, string filename,
                              shared_ptr<IO> io_handler) {
@@ -190,6 +209,8 @@ void checkAndFlushPageBuffer(vector<pair<int, int>> &page_buffer,
  * @return returns EXIT_FAILURE or EXIT_SUCCESS.
  */
 int BTree::mergeBTrees(string filename1, string filename2) {
+  
+  // --- Metadata fetching ---
   int num_pages1 = io_handler->numPagesInFile(filename1);
   int num_pages2 = io_handler->numPagesInFile(filename2);
   if (num_pages1 == -1 || num_pages2 == -1) {
@@ -229,6 +250,8 @@ int BTree::mergeBTrees(string filename1, string filename2) {
   int new_num_leaf_pages = 0;
   int new_num_data = 0;
 
+  // --- Merging ---
+
   while (tree1_page <= num_leaf_pages_tree1 &&
          tree1_page <= num_leaf_pages_tree2) {
     if (tree1_data[tree1_page_pointer].first == this->INF) {
@@ -245,16 +268,13 @@ int BTree::mergeBTrees(string filename1, string filename2) {
 
     if (tree1_data[tree1_page_pointer].first <
         tree2_data[tree2_page_pointer].first) {
-      page_buffer.push_back(tree1_data[tree1_page_pointer]);
-
-      new_num_data++;
+      addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, *this->filter, new_num_data);
       incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
                                this->buffer, filename1, this->B);
     } else {
       bool same_key = tree1_data[tree1_page_pointer].first ==
                       tree2_data[tree2_page_pointer].first;
-      page_buffer.push_back(tree2_data[tree2_page_pointer]);
-      new_num_data++;
+      addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, *this->filter, new_num_data);
       incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
                                this->buffer, filename2, this->B);
       if (same_key) {
@@ -272,8 +292,7 @@ int BTree::mergeBTrees(string filename1, string filename2) {
     if (tree1_data[tree1_page_pointer].first == this->INF) {
       break;  // No more useful data.
     }
-    page_buffer.push_back(tree1_data[tree1_page_pointer]);
-    new_num_data++;
+    addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, *this->filter, new_num_data);
     incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
                              this->buffer, filename1, this->B);
     checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
@@ -284,8 +303,7 @@ int BTree::mergeBTrees(string filename1, string filename2) {
     if (tree2_data[tree2_page_pointer].first == this->INF) {
       break;  // No more useful data.
     }
-    page_buffer.push_back(tree2_data[tree2_page_pointer]);
-    new_num_data++;
+    addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, *this->filter, new_num_data);
     incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
                              this->buffer, filename2, this->B);
     checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
@@ -576,6 +594,13 @@ optional<pair<pair<int, int>, int>> BTree::FindEqualToOrNextLargestInPage(
  *         or an empty optional if the key is not found.
  */
 optional<int> BTree::get(int key) {
+  // If we have a filter present, check the filter first.
+  if (this->filter != nullptr) {
+    if (!this->filter->hasKey(key)) {
+      return nullopt;
+    }
+  }
+
   if (this->use_binary_search) {
     return binarySearchGet(key);
   }
