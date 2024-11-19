@@ -12,6 +12,7 @@
 #include <vector>
 #include <optional>
 #include "../io.h"
+#include <stdexcept>
 
 using namespace std;
 
@@ -67,6 +68,8 @@ class IOHandler: public IO {
 
         int getPageSize();
         int getPairSize();
+
+        int renameFile(string source_filename, string dest_filename);
 
 };
 

@@ -59,6 +59,7 @@ public:
 
     virtual int getPageSize() = 0;
     virtual int getPairSize() = 0;
+    virtual int renameFile(string source_filename, string dest_filename) = 0;
 };
 
 #endif

@@ -30,6 +30,7 @@ class MockIOHandler : public IO {
   MOCK_METHOD(int, getPageSize, ());
   MOCK_METHOD(int, getPairSize, ());
   MOCK_METHOD(void, del, (string filename));
+  MOCK_METHOD(int, renameFile, (string source_filename, string dest_filename));
 };
 
 vector<pair<int, int>> expected_b_tree = {
@@ -663,4 +664,33 @@ TEST(BTreeTest, MergeBTreesTest) {
     EXPECT_EQ(internal_nodes[i].first, expected_internal_nodes[i].first);
     EXPECT_EQ(internal_nodes[i].second, expected_internal_nodes[i].second);
   }
+}
+TEST(BTreeTest, RenameTest) {
+  // Create a mock IOHandler
+  shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+  shared_ptr<ExtHash> buffer = make_shared<ExtHash>(5, 5, .8, 1, mockIOHandler);
+
+  string old_filename = "old_btree";
+  string new_filename = "new_btree";
+
+  // Set the getPageSize to be 24, 3 pairs.
+  EXPECT_CALL(*mockIOHandler, getPageSize())
+      .WillRepeatedly(Return(24));  // Page size which has 3 values each
+  // Set the pair size to be the size of 2 integers.
+  EXPECT_CALL(*mockIOHandler, getPairSize()).WillRepeatedly(Return(8));
+  EXPECT_CALL(*mockIOHandler, numPagesInFile(old_filename))
+      .WillRepeatedly(Return(-1));
+
+  BTree btree(old_filename, "test_db", mockIOHandler, buffer, false);
+
+  // Expect the renameFile method to be called once
+  EXPECT_CALL(*mockIOHandler, renameFile(old_filename, new_filename))
+      .Times(1)
+      .WillOnce(Return(1));
+
+  // Call the rename method
+  btree.rename(new_filename);
+
+  // Check if the filename has been updated
+  EXPECT_EQ(btree.filename, new_filename);
 }

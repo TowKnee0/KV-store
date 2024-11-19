@@ -56,7 +56,6 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &
     // Create the directory if it doesn't exist.
     string fullPath = constructFilePath() + constructFileName(filename);
     filesystem::path dirPath = filesystem::path(fullPath).parent_path();
-    cout << dirPath << endl;
     if (!filesystem::exists(dirPath))
     {
         filesystem::create_directories(dirPath);
@@ -130,7 +129,6 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &
 
     free(alignedMemory);
     close(fd);
-    cout << "finished writing to file: " << fullPath << endl;
     return 1;
 }
 
@@ -226,4 +224,30 @@ int IOHandler::numPagesInFile(const string filename) {
     return fileSize / PAGE_SIZE;
 }
 
-void IOHandler::del(string filename) {}
+/**
+ * @brief Deletes filename
+ *
+ * @param filename The name of the file to be deleted.
+ * @throws std::runtime_error If the file cannot be deleted.
+ */
+void IOHandler::del(string filename) {
+    int success = remove((constructFilePath() + constructFileName(filename)).c_str());
+    if (success != 0) {
+        throw runtime_error("Error deleting file");
+    }
+}
+
+/**
+ * Renames a file from the source filename to the destination filename.
+ *
+ * @param source_filename The name of the file to be renamed.
+ * @param dest_filename The new name for the file.
+ * @return Returns 1 if the file was renamed, or -1 if an error occurred.
+ */
+int IOHandler::renameFile(string source_filename, string dest_filename) {
+    int success = rename((constructFilePath() + constructFileName(source_filename)).c_str(), (constructFilePath() + dest_filename + ".bin").c_str());
+    if (success != 0) {
+        return -1;
+    }
+    return 1;
+}

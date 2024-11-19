@@ -666,4 +666,17 @@ vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
   return res;
 };
 
-void BTree::rename(string filename) {}
+/**
+ * Renames the current file associated with the tree
+ *
+ * @param filename The new name for the file.
+ * @throws runtime_error if the rename fails.
+ */
+void BTree::rename(string filename) {
+  int renamed = this->io_handler->renameFile(this->filename, filename);
+  if (renamed == -1) {
+    string error_msg = "Error renaming file: " + this->filename;
+    throw runtime_error(error_msg);
+  }
+  this->filename = filename;
+};

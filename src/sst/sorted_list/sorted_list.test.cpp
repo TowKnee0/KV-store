@@ -21,6 +21,7 @@ public:
     MOCK_METHOD(int, getPageSize, ());
     MOCK_METHOD(int, getPairSize, ());
     MOCK_METHOD(void, del, (string filename));
+    MOCK_METHOD(int, renameFile, (string source_filename, string dest_filename));
 };
 
 TEST(SstTest, WriteTest)

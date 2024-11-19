@@ -107,7 +107,28 @@ TEST_F(IOHandlerTest, TestWriteAndReadFile) {
     }
 }
 
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+TEST_F(IOHandlerTest, TestDeleteFile) {
+    vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
+    ioHandler->writeToFile(filename, data);
+
+    string fullPath = ioHandler->constructFilePath() + ioHandler->constructFileName(filename);
+    EXPECT_TRUE(filesystem::exists(fullPath));
+
+    ioHandler->del(filename);
+    EXPECT_FALSE(filesystem::exists(fullPath));
+}
+
+TEST_F(IOHandlerTest, TestRenameFile) {
+    vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
+    ioHandler->writeToFile(filename, data);
+
+    string fullPath = ioHandler->constructFilePath() + ioHandler->constructFileName(filename);
+    EXPECT_TRUE(filesystem::exists(fullPath));
+
+    string newFilename = "renamedfile";
+    EXPECT_EQ(ioHandler->renameFile(filename, newFilename), 1);
+
+    string newFullPath = ioHandler->constructFilePath() + ioHandler->constructFileName(newFilename);
+    EXPECT_TRUE(filesystem::exists(newFullPath));
+    EXPECT_FALSE(filesystem::exists(fullPath));
 }
