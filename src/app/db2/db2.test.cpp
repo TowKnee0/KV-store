@@ -42,7 +42,6 @@ class MockSST : public Sst
 public:
     MOCK_METHOD(int, write, ((const vector<pair<int, int>>)&data));
     MOCK_METHOD((optional<int>), get, (int key));
-    MOCK_METHOD((vector<pair<int, int>>), scan, (int rangeStart, int rangeEnd));
     MOCK_METHOD((vector<int>), getKeyData, (int key));
 };
 
@@ -122,69 +121,70 @@ TEST(Db2Test, GetFromThirdSST)
     EXPECT_EQ(result.value(), value.value());
 }
 
-// Add a test for the scan method
-TEST(Db2Test, Scan)
-{
-    // Create a mock Memtable
-    unique_ptr<MockMemtable> mockMemtable = make_unique<MockMemtable>();
+// TODO: REMAKE AFTER NEW SCAN IMPLEMENTED
+// // Add a test for the scan method
+// TEST(Db2Test, Scan)
+// {
+//     // Create a mock Memtable
+//     unique_ptr<MockMemtable> mockMemtable = make_unique<MockMemtable>();
 
-    // Create a mock IO
-    shared_ptr<MockIO> mockIO = make_shared<MockIO>();
+//     // Create a mock IO
+//     shared_ptr<MockIO> mockIO = make_shared<MockIO>();
 
-    // Create a Db2 instance
-    Db2 db2(10, 1, 10, 1.5, 2, false);
+//     // Create a Db2 instance
+//     Db2 db2(10, 1, 10, 1.5, 2, false);
 
-    // Set the io_handler to the mock
-    db2.io_handler = mockIO;
+//     // Set the io_handler to the mock
+//     db2.io_handler = mockIO;
 
-    // Set the key range
-    int key1 = 1;
-    int key2 = 10;
+//     // Set the key range
+//     int key1 = 1;
+//     int key2 = 10;
 
-    // Expect the scan method to be called once, returning the value
-    EXPECT_CALL(*mockMemtable, scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{1, 2}, {2, 3}}));
+//     // Expect the scan method to be called once, returning the value
+//     EXPECT_CALL(*mockMemtable, scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{1, 2}, {2, 3}}));
 
-    db2.memtable = move(mockMemtable);
+//     db2.memtable = move(mockMemtable);
 
-    // Create mock SSTs
-    vector<unique_ptr<MockSST>> mockSSTs;
-    for (int i = 0; i < 3; ++i)
-    {
-        mockSSTs.push_back(make_unique<MockSST>());
-    }
+//     // Create mock SSTs
+//     vector<unique_ptr<MockSST>> mockSSTs;
+//     for (int i = 0; i < 3; ++i)
+//     {
+//         mockSSTs.push_back(make_unique<MockSST>());
+//     }
 
-    // Fill mock ssts
-    EXPECT_CALL(*mockSSTs[2], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{6, 7}, {7, 8}, {9, 10}}));
-    EXPECT_CALL(*mockSSTs[1], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{5, 10}, {8, 11}, {10, 12}}));
-    EXPECT_CALL(*mockSSTs[0], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{3, 4}, {4, 5}}));
+//     // Fill mock ssts
+//     EXPECT_CALL(*mockSSTs[2], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{6, 7}, {7, 8}, {9, 10}}));
+//     EXPECT_CALL(*mockSSTs[1], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{5, 10}, {8, 11}, {10, 12}}));
+//     EXPECT_CALL(*mockSSTs[0], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{3, 4}, {4, 5}}));
 
-    // Move the mock SSTs into the db2 instance
-    for (auto &mockSST : mockSSTs)
-    {
-        db2.sst.push_back(move(mockSST));
-    }
+//     // Move the mock SSTs into the db2 instance
+//     for (auto &mockSST : mockSSTs)
+//     {
+//         db2.sst.push_back(move(mockSST));
+//     }
 
-    // Call the scan method
-    vector<pair<int, int>> result = db2.scan(key1, key2);
-    EXPECT_EQ(result.size(), 10);
-    EXPECT_EQ(result[0].first, 1);
-    EXPECT_EQ(result[0].second, 2);
-    EXPECT_EQ(result[1].first, 2);
-    EXPECT_EQ(result[1].second, 3);
-    EXPECT_EQ(result[2].first, 3);
-    EXPECT_EQ(result[2].second, 4);
-    EXPECT_EQ(result[3].first, 4);
-    EXPECT_EQ(result[3].second, 5);
-    EXPECT_EQ(result[4].first, 5);
-    EXPECT_EQ(result[4].second, 10);
-    EXPECT_EQ(result[5].first, 6);
-    EXPECT_EQ(result[5].second, 7);
-    EXPECT_EQ(result[6].first, 7);
-    EXPECT_EQ(result[6].second, 8);
-    EXPECT_EQ(result[7].first, 8);
-    EXPECT_EQ(result[7].second, 11);
-    EXPECT_EQ(result[8].first, 9);
-    EXPECT_EQ(result[8].second, 10);
-    EXPECT_EQ(result[9].first, 10);
-    EXPECT_EQ(result[9].second, 12);
-}
+//     // Call the scan method
+//     vector<pair<int, int>> result = db2.scan(key1, key2);
+//     EXPECT_EQ(result.size(), 10);
+//     EXPECT_EQ(result[0].first, 1);
+//     EXPECT_EQ(result[0].second, 2);
+//     EXPECT_EQ(result[1].first, 2);
+//     EXPECT_EQ(result[1].second, 3);
+//     EXPECT_EQ(result[2].first, 3);
+//     EXPECT_EQ(result[2].second, 4);
+//     EXPECT_EQ(result[3].first, 4);
+//     EXPECT_EQ(result[3].second, 5);
+//     EXPECT_EQ(result[4].first, 5);
+//     EXPECT_EQ(result[4].second, 10);
+//     EXPECT_EQ(result[5].first, 6);
+//     EXPECT_EQ(result[5].second, 7);
+//     EXPECT_EQ(result[6].first, 7);
+//     EXPECT_EQ(result[6].second, 8);
+//     EXPECT_EQ(result[7].first, 8);
+//     EXPECT_EQ(result[7].second, 11);
+//     EXPECT_EQ(result[8].first, 9);
+//     EXPECT_EQ(result[8].second, 10);
+//     EXPECT_EQ(result[9].first, 10);
+//     EXPECT_EQ(result[9].second, 12);
+// }

@@ -41,11 +41,9 @@ private:
 
     vector<pair<int, int>> contructInternalNodes();
     pair<int, pair<int, int>> findKeyInPage(int key, int page_location);
-    optional<pair<int, int>> getItem(int key, int page_location);
     void loadMetadata();
     vector<pair<int, int>> constructMetadata();
 
-    int getIndexInBTree(int key);
     optional<int> btreeGet(int key);
 
     // Methods for binary search
@@ -62,7 +60,6 @@ public:
     virtual optional<int> get(int key); // Search the corresponding value for this key.
     virtual int mergeBTrees(string filename1, string filename2);
     vector<int> getKeyData(int key);
-    virtual vector<pair<int, int>> scan(int rangeStart, int rangeEnd);
 };
 
 #endif

@@ -8,7 +8,6 @@ using ::testing::Throw;
 
 // #define private public
 
-
 using namespace std;
 
 // Mock for Memtable
@@ -37,7 +36,7 @@ public:
     MOCK_METHOD(int, renameFile, (string source_filename, string dest_filename));
 };
 
-class MockBuffer : public Buffer 
+class MockBuffer : public Buffer
 {
 public:
     MOCK_METHOD((optional<vector<pair<int, int>>>), getPage, (const string filename, int pageNumber, bool get_from_storage));
@@ -46,22 +45,21 @@ public:
 };
 
 class MockBTree : public BTree
-{   
+{
 public:
     MockBTree(string filename, string dbname, shared_ptr<IO> io_handler, shared_ptr<Buffer> buffer, bool use_binary_search = false)
         : BTree(filename, dbname, io_handler, buffer, use_binary_search) {}
     MOCK_METHOD(void, rename, (string filename));
-    MOCK_METHOD(int, write, ((const vector<pair<int, int>>& data)));
+    MOCK_METHOD(int, write, ((const vector<pair<int, int>> &data)));
     MOCK_METHOD(optional<int>, get, (int key));
     MOCK_METHOD(int, mergeBTrees, (string filename1, string filename2));
-    MOCK_METHOD((vector<pair<int, int>>), scan, (int rangeStart, int rangeEnd));
 };
 
-class MockBTreeFactory : public BTreeFactory {
+class MockBTreeFactory : public BTreeFactory
+{
 public:
     MOCK_METHOD(shared_ptr<BTree>, create, (string name, string dbname, shared_ptr<IO> io, shared_ptr<Buffer> buffer, shared_ptr<Filter> filter));
 };
-
 
 // TEST(LsmTest, PutInsertsSuccessfullyIntoMemtable) {
 //     auto mockMemtable = make_shared<MockMemtable>();
@@ -97,7 +95,6 @@ public:
 //     EXPECT_CALL(*mockIO, getPairSize())
 //         .WillRepeatedly(Return(16));
 
-
 //     // Simulate BTree creation and data write.
 //     auto mockBTree = make_shared<MockBTree>("temp", "test_db", mockIO, mockBuffer);
 //     EXPECT_CALL(*mockFactory, create("temp", "test_db", static_pointer_cast<IO>(mockIO), static_pointer_cast<Buffer>(mockBuffer)))
@@ -112,7 +109,8 @@ public:
 //     EXPECT_NO_THROW(lsm.put(1, 100));
 // }
 
-TEST(LsmTest, PutHandlesBTreeMerge) {
+TEST(LsmTest, PutHandlesBTreeMerge)
+{
     auto mockMemtable = make_shared<MockMemtable>();
     auto mockIO = make_shared<MockIO>();
     auto mockBuffer = make_shared<MockBuffer>();
@@ -120,7 +118,8 @@ TEST(LsmTest, PutHandlesBTreeMerge) {
 
     // Simulate memtable overflow.
     EXPECT_CALL(*mockMemtable, put(1, 100))
-        .WillOnce(Return(EXIT_FAILURE)).WillOnce(Return(EXIT_SUCCESS));
+        .WillOnce(Return(EXIT_FAILURE))
+        .WillOnce(Return(EXIT_SUCCESS));
     EXPECT_CALL(*mockMemtable, inOrder())
         .WillOnce(Return(vector<pair<int, int>>{{1, 100}}));
     EXPECT_CALL(*mockMemtable, clear())
@@ -152,13 +151,11 @@ TEST(LsmTest, PutHandlesBTreeMerge) {
     EXPECT_CALL(*mockIO, del("L1"))
         .Times(1);
     EXPECT_CALL(*mockBTree3, rename("temp"))
-        .WillOnce([mockBTree3](string name) {
-            mockBTree3->filename = name;
-        });
+        .WillOnce([mockBTree3](string name)
+                  { mockBTree3->filename = name; });
     EXPECT_CALL(*mockBTree3, rename("L2"))
-        .WillOnce([mockBTree3](string name) {
-            mockBTree3->filename = name;
-        });
+        .WillOnce([mockBTree3](string name)
+                  { mockBTree3->filename = name; });
 
     Lsm lsm("test_db", mockBuffer, mockMemtable, mockIO, mockFactory, 10);
     lsm.trees.push_back(mockBTree1); // Simulate an existing BTree in level 1.
@@ -170,7 +167,8 @@ TEST(LsmTest, PutHandlesBTreeMerge) {
     ASSERT_EQ(lsm.trees[1]->filename, "L2");
 }
 
-TEST(LsmTest, PutfreeSpot) {
+TEST(LsmTest, PutfreeSpot)
+{
     auto mockMemtable = make_shared<MockMemtable>();
     auto mockIO = make_shared<MockIO>();
     auto mockBuffer = make_shared<MockBuffer>();
@@ -178,7 +176,8 @@ TEST(LsmTest, PutfreeSpot) {
 
     // Simulate memtable overflow.
     EXPECT_CALL(*mockMemtable, put(1, 100))
-        .WillOnce(Return(EXIT_FAILURE)).WillOnce(Return(EXIT_SUCCESS));
+        .WillOnce(Return(EXIT_FAILURE))
+        .WillOnce(Return(EXIT_SUCCESS));
     EXPECT_CALL(*mockMemtable, inOrder())
         .WillOnce(Return(vector<pair<int, int>>{{1, 100}}));
     EXPECT_CALL(*mockMemtable, clear())
@@ -211,13 +210,11 @@ TEST(LsmTest, PutfreeSpot) {
     EXPECT_CALL(*mockIO, del("L1"))
         .Times(1);
     EXPECT_CALL(*mockBTree3, rename("temp"))
-        .WillOnce([mockBTree3](string name) {
-            mockBTree3->filename = name;
-        });
+        .WillOnce([mockBTree3](string name)
+                  { mockBTree3->filename = name; });
     EXPECT_CALL(*mockBTree3, rename("L2"))
-        .WillOnce([mockBTree3](string name) {
-            mockBTree3->filename = name;
-        });
+        .WillOnce([mockBTree3](string name)
+                  { mockBTree3->filename = name; });
 
     Lsm lsm("test_db", mockBuffer, mockMemtable, mockIO, mockFactory, 10);
     lsm.trees.push_back(mockBTree1); // Simulate an existing BTree in level 1.

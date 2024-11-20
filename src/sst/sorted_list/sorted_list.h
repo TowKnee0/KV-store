@@ -29,18 +29,6 @@ public:
     int write(const vector<pair<int, int>> &data);
     optional<int> get(int key); // Search the corresponding value for this key.
 
-    /*
-     * Scans the SST file and returns all key-value pairs that are in the given target range.
-     * The range is EXCLUSIVE of both endpints.
-     *
-     * Parameters:
-     * - rangeStart: the start of the range (exclusive)
-     * - rangeEnd: the end of the range (exclusive)
-     *
-     * Returns:
-     * - A vector of key-value pairs that are in the given range.
-     */
-    vector<pair<int, int>> scan(int rangeStart, int rangeEnd);
     virtual vector<int> getKeyData(int key);
 };
 

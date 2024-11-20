@@ -6,7 +6,6 @@
 #include <iostream>
 #include <stdexcept>
 
-
 using namespace std;
 
 Db1::Db1(int memtable_size)
@@ -38,7 +37,8 @@ void Db1::write_memtable()
     num_sst++;
     unique_ptr<SortedList> s = make_unique<SortedList>(to_string(num_sst), name, io_handler);
 
-    if (s->write(data) == EXIT_FAILURE){
+    if (s->write(data) == EXIT_FAILURE)
+    {
         throw runtime_error("memtable write failed");
     };
     sst.push_back(move(s));
@@ -75,54 +75,55 @@ optional<int> Db1::get(int key)
 
 vector<pair<int, int>> Db1::scan(int key1, int key2)
 {
-    
-    // Scan the memtable first
-    vector<pair<int, int>> memtable_entries = memtable->scan(key1, key2);
-    
-    vector<vector<pair<int, int>>> results;
 
-    results.push_back(memtable_entries);
-    for (auto &s : sst)
-    {
-        vector<pair<int, int>> entries = s->scan(key1, key2);
-        if (entries.size() != 0)
-        {
-            results.push_back(entries);
-        }
-    }
+    // // Scan the memtable first
+    // vector<pair<int, int>> memtable_entries = memtable->scan(key1, key2);
 
-    // create a vector which stores the current index of each sst
-    vector<int> indexes(results.size(), 0);
+    // vector<vector<pair<int, int>>> results;
 
-    // Combine the results in sorted order.
-    vector<pair<int, int>> combined;
+    // results.push_back(memtable_entries);
+    // for (auto &s : sst)
+    // {
+    //     vector<pair<int, int>> entries = s->scan(key1, key2);
+    //     if (entries.size() != 0)
+    //     {
+    //         results.push_back(entries);
+    //     }
+    // }
 
-    // Min heap stores the current key, with what pq it came from
-    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> min_heap;
+    // // create a vector which stores the current index of each sst
+    // vector<int> indexes(results.size(), 0);
 
-    for (int i = 0; i < results.size(); i++)
-    {
-        if (results[i].size() > 0)
-        {
-            min_heap.push({results[i].at(0).first, i});
-        }
-    }
+    // // Combine the results in sorted order.
+    // vector<pair<int, int>> combined;
 
-    while (!min_heap.empty())
-    {
-        auto [key, i] = min_heap.top();
-        min_heap.pop();
+    // // Min heap stores the current key, with what pq it came from
+    // priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> min_heap;
 
-        combined.push_back({key, results[i].at(indexes[i]).second});
-        indexes[i]++;
+    // for (int i = 0; i < results.size(); i++)
+    // {
+    //     if (results[i].size() > 0)
+    //     {
+    //         min_heap.push({results[i].at(0).first, i});
+    //     }
+    // }
 
-        if (indexes[i] < results[i].size())
-        {
-            min_heap.push({results[i].at(indexes[i]).first, i});
-        }
-    }
+    // while (!min_heap.empty())
+    // {
+    //     auto [key, i] = min_heap.top();
+    //     min_heap.pop();
 
-    return combined;
+    //     combined.push_back({key, results[i].at(indexes[i]).second});
+    //     indexes[i]++;
+
+    //     if (indexes[i] < results[i].size())
+    //     {
+    //         min_heap.push({results[i].at(indexes[i]).first, i});
+    //     }
+    // }
+
+    // return combined;
+    return {};
 }
 
 void Db1::close()

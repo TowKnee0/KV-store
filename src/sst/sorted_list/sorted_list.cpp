@@ -35,51 +35,6 @@ optional<int> SortedList::get(int key)
   return nullopt;
 }
 
-vector<pair<int, int>> SortedList::scan(int rangeStart, int rangeEnd)
-{
-  // Find the page which contains the rangeStart, or the next largest value.
-  optional<pair<vector<pair<int, int>>, int>> page_and_num =
-      findPageWithValueEqualToOrGraterThan(rangeStart);
-  if (page_and_num == nullopt)
-  {
-    return {};
-  }
-  vector<pair<int, int>> page_values = page_and_num.value().first;
-  int page_num = page_and_num.value().second;
-
-  optional<pair<pair<int, int>, int>> result =
-      FindEqualToOrNextLargestInPage(rangeStart, page_values);
-  if (result == nullopt)
-  {
-    return {};
-  }
-
-  pair<int, int> key_value = result.value().first;
-  int index = result.value().second;
-
-  vector<pair<int, int>> res;
-  int total_pages = io_handler->numPagesInFile(filename);
-
-  while (page_values[index].first <= rangeEnd)
-  {
-    res.push_back(page_values[index]);
-    index++;
-
-    if (index >= page_values.size())
-    {
-      page_num++;
-      if (page_num > total_pages)
-      {
-        break;
-      }
-      page_values = io_handler->readPageFromFile(filename, page_num).value();
-      index = 0;
-    }
-  }
-
-  return res;
-}
-
 // Finds a page which contains the key, or the next largest value than the key.
 // Returns the page, and the page number if found, or nullopt if not found.
 optional<pair<vector<pair<int, int>>, int>>

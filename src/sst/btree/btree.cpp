@@ -517,31 +517,6 @@ pair<int, pair<int, int>> BTree::findKeyInPage(int key, int page_location)
 };
 
 /**
- * @brief Get the index of the key in the btree. If the key is not present,
- * it returns the index of the next largest key. (helpful for scanning)
- *
- * @param key The key to find in the BTree.
- * @return int The index of the key or next largest key in the BTree.
- */
-int BTree::getIndexInBTree(int key)
-{
-  int page_index = 0;
-  // Loop through each layer of the BTree, start at height - 1 since 1 indexed.
-  // Stop at 0 since layer 0 is the leaf layer and is handled differently.
-  for (int h = this->height - 1; h > 0; h--)
-  {
-    int level_index = layerStartingIndex(h, this->num_data, this->B);
-    int corresponding_key_index =
-        findKeyInPage(key, level_index + page_index).first;
-    page_index = page_index * (this->B + 1) + corresponding_key_index * this->B;
-  };
-
-  // Page index is now the leaf index
-  int index_in_leaf_node = findKeyInPage(key, page_index).first;
-  return index_in_leaf_node + page_index;
-}
-
-/**
  * @brief Get the index, page, key and value of the key in the BTree.
  * Returns the next largest key if the key is not found.
  * If there is no next largest key, returns -1 for all values.
@@ -603,14 +578,6 @@ vector<int> BTree::getKeyData(int key)
  */
 optional<int> BTree::btreeGet(int key)
 {
-  // int index = getIndexInBTree(key);
-  // pair<int, pair<int, int>> result = findKeyInPage(key, index);
-  // // If the key is what we are looking for, return the value.
-  // // (If the key is not found, it returns the next largest key)
-  // if (result.second.first == key)
-  // {
-  //   return result.second.second;
-  // }
   vector<int> key_data = getKeyData(key);
   if (key_data[2] != key)
   {
@@ -761,73 +728,6 @@ optional<int> BTree::get(int key)
   }
   return btreeGet(key);
 }
-
-/**
- * @brief Scans the tree for key-value pairs within a specified range.
- *
- * @param rangeStart The starting key of the range to scan.
- * @param rangeEnd The ending key of the range to scan.
- * @return A vector of key-value pairs where the keys are within the specified
- * range.
- */
-vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd)
-{
-  vector<pair<int, int>> page_values;
-  int index;
-  int page_num;
-
-  // Populate variables using binary search
-  if (this->use_binary_search)
-  {
-    // Find the page which contains the rangeStart, or the next largest value.
-    optional<pair<vector<pair<int, int>>, int>> page_and_num =
-        findPageWithValueEqualToOrGraterThan(rangeStart);
-    if (page_and_num == nullopt)
-    {
-      return {};
-    }
-    page_values = page_and_num.value().first;
-    page_num = page_and_num.value().second;
-
-    optional<pair<pair<int, int>, int>> result =
-        FindEqualToOrNextLargestInPage(rangeStart, page_values);
-    if (result == nullopt)
-    {
-      return {};
-    }
-
-    pair<int, int> key_value = result.value().first;
-    index = result.value().second;
-  }
-  // Populate variables using B-tree search
-  else
-  {
-    int index_in_btree = getIndexInBTree(rangeStart);
-    page_num = (index_in_btree / this->B) + 1; // 1 indexed
-    index = index_in_btree % this->B;
-    page_values = io_handler->readPageFromFile(filename, page_num).value();
-  }
-  vector<pair<int, int>> res;
-  int total_pages = io_handler->numPagesInFile(filename);
-  while (page_values[index].first <= rangeEnd)
-  {
-    res.push_back(page_values[index]);
-    index++;
-
-    if (index >= page_values.size())
-    {
-      page_num++;
-      if (page_num > total_pages)
-      {
-        break;
-      }
-      page_values = io_handler->readPageFromFile(filename, page_num).value();
-      index = 0;
-    }
-  }
-
-  return res;
-};
 
 /**
  * Renames the current file associated with the tree
