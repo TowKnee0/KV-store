@@ -43,6 +43,7 @@ public:
     MOCK_METHOD(int, write, ((const vector<pair<int, int>>)&data));
     MOCK_METHOD((optional<int>), get, (int key));
     MOCK_METHOD((vector<pair<int, int>>), scan, (int rangeStart, int rangeEnd));
+    MOCK_METHOD((vector<int>), getKeyData, (int key));
 };
 
 // Test getting when the data is in the Memtable

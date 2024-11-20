@@ -135,6 +135,7 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &
 optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filename, int pageNumber)
 {
     // Calculate the memory address for the page
+    cout << "Reading page " << pageNumber << " from file " << filename << endl;
     size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
     string fullPath = constructFilePath() + constructFileName(filename);
     int fd = open(fullPath.c_str(), O_DIRECT | O_RDONLY);
@@ -155,7 +156,8 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
     // Read the page into the aligned buffer and handle error accordingly
     int bytesRead = pread(fd, buffer, PAGE_SIZE, pageMemoryAddress);
     int pairsRead = bytesRead / PAIR_SIZE;
-    if (bytesRead < 0)
+    cout << "Read " << bytesRead << " bytes from file " << filename << endl;
+    if (bytesRead <= 0)
     {
         free(buffer);
         close(fd);
@@ -209,16 +211,19 @@ vector<string> IOHandler::getDbFilenames()
     return filenames;
 }
 
-size_t getFileSize(const string &filename) {
+size_t getFileSize(const string &filename)
+{
     struct stat stat_buf;
     int rc = stat(filename.c_str(), &stat_buf);
     return rc == 0 ? stat_buf.st_size : 0;
 }
 
-int IOHandler::numPagesInFile(const string filename) {
+int IOHandler::numPagesInFile(const string filename)
+{
     string fullPath = constructFilePath() + constructFileName(filename);
     size_t fileSize = getFileSize(fullPath);
-    if (fileSize == 0) {
+    if (fileSize == 0)
+    {
         return -1;
     }
     return fileSize / PAGE_SIZE;
@@ -230,9 +235,11 @@ int IOHandler::numPagesInFile(const string filename) {
  * @param filename The name of the file to be deleted.
  * @throws std::runtime_error If the file cannot be deleted.
  */
-void IOHandler::del(string filename) {
+void IOHandler::del(string filename)
+{
     int success = remove((constructFilePath() + constructFileName(filename)).c_str());
-    if (success != 0) {
+    if (success != 0)
+    {
         throw runtime_error("Error deleting file");
     }
 }
@@ -244,9 +251,11 @@ void IOHandler::del(string filename) {
  * @param dest_filename The new name for the file.
  * @return Returns 1 if the file was renamed, or -1 if an error occurred.
  */
-int IOHandler::renameFile(string source_filename, string dest_filename) {
+int IOHandler::renameFile(string source_filename, string dest_filename)
+{
     int success = rename((constructFilePath() + constructFileName(source_filename)).c_str(), (constructFilePath() + dest_filename + ".bin").c_str());
-    if (success != 0) {
+    if (success != 0)
+    {
         return -1;
     }
     return 1;

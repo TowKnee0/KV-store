@@ -61,6 +61,77 @@ TEST(SstTest, GetTest)
     EXPECT_EQ(sortedList.get(1), 2);
 }
 
+// Test get when we have multiple pages worth of data
+TEST(SstTest, GetTestLarge)
+{
+    // Create a mock IOHandler
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+    string filename = "test_sst";
+    SortedList sortedList(filename, "test_db", mockIOHandler);
+
+    // Create some data
+    vector<pair<int, int>> data1 = {{1, 2}, {3, 4}, {5, 6}};
+    vector<pair<int, int>> data2 = {{7, 8}, {9, 10}, {11, 12}};
+    vector<pair<int, int>> data3 = {{13, 14}, {15, 16}, {17, 18}};
+    vector<pair<int, int>> data4 = {{19, 20}, {21, 22}, {23, 24}};
+
+    // Expect the getNumPagesInFile method to be called once, returning 4
+    EXPECT_CALL(*mockIOHandler, numPagesInFile(filename)).WillRepeatedly(Return(4));
+
+    // Expect the readPageFromFile method to be called four times
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 2)).WillRepeatedly(Return(data2));
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 1)).WillRepeatedly(Return(data1));
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 3)).WillRepeatedly(Return(data3));
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, 4)).WillRepeatedly(Return(data4));
+
+    // Call the get method
+    EXPECT_EQ(sortedList.get(7), 8);
+    EXPECT_EQ(sortedList.get(15), 16);
+    EXPECT_EQ(sortedList.get(23), 24);
+
+    // Test the getKeyData method
+    vector<int> keyData = sortedList.getKeyData(15);
+    EXPECT_EQ(keyData[0], 3);  // Page number
+    EXPECT_EQ(keyData[1], 1);  // index in page
+    EXPECT_EQ(keyData[2], 15); // key
+    EXPECT_EQ(keyData[3], 16); // value
+
+    // test not in the list at the beginning
+    keyData = sortedList.getKeyData(0);
+    EXPECT_EQ(keyData[0], 1); // Page number
+    EXPECT_EQ(keyData[1], 0); // index in page
+    EXPECT_EQ(keyData[2], 1); // key
+    EXPECT_EQ(keyData[3], 2); // value
+
+    // test not in the list in the middle
+    keyData = sortedList.getKeyData(8);
+    EXPECT_EQ(keyData[0], 2);  // Page number
+    EXPECT_EQ(keyData[1], 1);  // index in page
+    EXPECT_EQ(keyData[2], 9);  // key
+    EXPECT_EQ(keyData[3], 10); // value
+
+    // test not in the list at the end
+    keyData = sortedList.getKeyData(24);
+    EXPECT_EQ(keyData[0], -1); // Page number
+    EXPECT_EQ(keyData[1], -1); // index in page
+    EXPECT_EQ(keyData[2], -1); // key
+    EXPECT_EQ(keyData[3], -1); // value
+
+    // test exactly at the end
+    keyData = sortedList.getKeyData(23);
+    EXPECT_EQ(keyData[0], 4);  // Page number
+    EXPECT_EQ(keyData[1], 2);  // index in page
+    EXPECT_EQ(keyData[2], 23); // key
+    EXPECT_EQ(keyData[3], 24); // value
+
+    // test exactly at the start
+    keyData = sortedList.getKeyData(1);
+    EXPECT_EQ(keyData[0], 1); // Page number
+    EXPECT_EQ(keyData[1], 0); // index in page
+    EXPECT_EQ(keyData[2], 1); // key
+    EXPECT_EQ(keyData[3], 2); // value
+}
+
 TEST(SstTest, GetNonExistentKeyTest)
 {
     // Create a mock IOHandler

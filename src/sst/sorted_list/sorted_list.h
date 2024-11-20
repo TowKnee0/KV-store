@@ -21,8 +21,8 @@ private:
     string filename; // Which file the Sst is stored in
     string dbname;
     shared_ptr<IO> io_handler;
-    optional<pair<vector<pair<int,int>>,int>> findPageWithValueEqualToOrGraterThan(int key);
-    optional<pair<pair<int, int>, int>> FindEqualToOrNextLargestInPage(int key, vector<pair<int,int>> page);
+    optional<pair<vector<pair<int, int>>, int>> findPageWithValueEqualToOrGraterThan(int key);
+    optional<pair<pair<int, int>, int>> FindEqualToOrNextLargestInPage(int key, vector<pair<int, int>> page);
 
 public:
     SortedList(string filename, string dbname, shared_ptr<IO> io_handler);
@@ -41,6 +41,7 @@ public:
      * - A vector of key-value pairs that are in the given range.
      */
     vector<pair<int, int>> scan(int rangeStart, int rangeEnd);
+    virtual vector<int> getKeyData(int key);
 };
 
 #endif

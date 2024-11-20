@@ -23,7 +23,7 @@ private:
     shared_ptr<Filter> filter;
     int B;
     bool use_binary_search = false;
-    
+
     // Metadata. Metadata is stored in the last page of the file.
     // You can get the last page by calling io_handler->numPagesInFile(filename)
     static constexpr int B_TREE_SIZE_INDEX = 0;
@@ -40,7 +40,7 @@ private:
     int height = -1;
 
     vector<pair<int, int>> contructInternalNodes();
-    pair<int, pair<int,int>> findKeyInPage(int key, int page_location);
+    pair<int, pair<int, int>> findKeyInPage(int key, int page_location);
     optional<pair<int, int>> getItem(int key, int page_location);
     void loadMetadata();
     vector<pair<int, int>> constructMetadata();
@@ -61,6 +61,7 @@ public:
     virtual int write(const vector<pair<int, int>> &data);
     virtual optional<int> get(int key); // Search the corresponding value for this key.
     virtual int mergeBTrees(string filename1, string filename2);
+    vector<int> getKeyData(int key);
     virtual vector<pair<int, int>> scan(int rangeStart, int rangeEnd);
 };
 

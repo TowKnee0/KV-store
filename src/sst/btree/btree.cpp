@@ -27,7 +27,8 @@ int computeHeight(int num_keys, int B) { return ceil(log(num_keys, B + 1)); }
  * @param B Number of keys per node
  * @return The number of nodes required to store the given number of keys.
  */
-int numNodes(int num_keys, int B) {
+int numNodes(int num_keys, int B)
+{
   return ceil(static_cast<double>(num_keys) / B);
 }
 
@@ -38,7 +39,8 @@ int numNodes(int num_keys, int B) {
  * @param B Number of keys per node
  * @return The number of keys on the previous layer.
  */
-int numKeysOnPrevLayer(int current_keys, int B) {
+int numKeysOnPrevLayer(int current_keys, int B)
+{
   return ceil(static_cast<double>(current_keys) / (B + 1));
 }
 
@@ -51,9 +53,11 @@ int numKeysOnPrevLayer(int current_keys, int B) {
  * @param B Number of keys per node
  * @return The starting index of the specified layer.
  */
-int layerStartingIndex(int layer, int num_keys, int B) {
+int layerStartingIndex(int layer, int num_keys, int B)
+{
   int page_index = 0;
-  while (layer > 0) {
+  while (layer > 0)
+  {
     page_index += numNodes(num_keys, B) * B;
     num_keys = numKeysOnPrevLayer(num_keys, B);
     layer--;
@@ -67,15 +71,18 @@ int layerStartingIndex(int layer, int num_keys, int B) {
  * If the file is not found (no data yet) returns early.
  *
  */
-void BTree::loadMetadata() {
+void BTree::loadMetadata()
+{
   int num_pages = this->io_handler->numPagesInFile(this->filename);
-  if (num_pages == -1) {
+  if (num_pages == -1)
+  {
     return;
   }
   // Metadata is in the last page.
   optional<vector<pair<int, int>>> metadata =
       this->buffer->getPage(this->filename, num_pages);
-  if (!metadata.has_value()) {
+  if (!metadata.has_value())
+  {
     return;
   };
   vector<pair<int, int>> metadata_data = metadata.value();
@@ -95,7 +102,8 @@ void BTree::loadMetadata() {
  * @param use_binary_search whether to use binary search.
  */
 BTree::BTree(string filename, string dbname, shared_ptr<IO> handler,
-             shared_ptr<Buffer> buffer, bool use_binary_search, shared_ptr<Filter> filter) {
+             shared_ptr<Buffer> buffer, bool use_binary_search, shared_ptr<Filter> filter)
+{
   this->use_binary_search = use_binary_search;
   this->filename = filename;
   this->io_handler = handler;
@@ -112,7 +120,8 @@ BTree::BTree(string filename, string dbname, shared_ptr<IO> handler,
  * vector.
  * @return A vector of pairs containing the metadata of the BTree.
  */
-vector<pair<int, int>> BTree::constructMetadata() {
+vector<pair<int, int>> BTree::constructMetadata()
+{
   vector<pair<int, int>> metadata = {
       {BTree::B_TREE_SIZE_INDEX, this->B},
       {BTree::B_TREE_HEIGHT_INDEX, this->height},
@@ -128,50 +137,53 @@ vector<pair<int, int>> BTree::constructMetadata() {
  * @return int Returns EXIT_SUCCESS on successful write, otherwise returns
  * EXIT_FAILURE.
  */
-int BTree::write(const vector<pair<int, int>> &data) {
+int BTree::write(const vector<pair<int, int>> &data)
+{
   // Write leafs
-  if (io_handler->writeToFile(filename, data) == -1) {
+  if (io_handler->writeToFile(filename, data) == -1)
+  {
     return EXIT_FAILURE;
   }
 
   cout << "Btree write 1" << endl;
   // If we have a filter, add all the keys to the filter.
   // Part 3 only.
-  if (this->filter != nullptr) {
-    for (auto &pair : data) {
+  if (this->filter != nullptr)
+  {
+    for (auto &pair : data)
+    {
       this->filter->addKey(pair.first);
     }
   }
 
   cout << "Btree write 2" << endl;
 
-
   this->num_leaf_pages =
       ceil(static_cast<double>(data.size()) /
-           this->B);  // io_handler->numPagesInFile(filename);
+           this->B); // io_handler->numPagesInFile(filename);
   this->num_data = data.size();
   this->height = computeHeight(this->num_data, this->B);
 
   cout << "Btree write 3" << endl;
 
-
   if (io_handler->writeToFile(this->filename, this->contructInternalNodes(),
-                              this->num_leaf_pages + 1) == -1) {
+                              this->num_leaf_pages + 1) == -1)
+  {
     return EXIT_FAILURE;
   }
 
   cout << "Btree write 4" << endl;
 
-
   int total_pages_without_metadata =
       ceil(static_cast<double>(
                layerStartingIndex(this->height, data.size(), this->B)) /
-           this->B);  // io_handler->numPagesInFile(this->filename);
+           this->B); // io_handler->numPagesInFile(this->filename);
 
   cout << "Btree write 5" << endl;
 
   if (io_handler->writeToFile(this->filename, this->constructMetadata(),
-                              total_pages_without_metadata + 1) == -1) {
+                              total_pages_without_metadata + 1) == -1)
+  {
     return EXIT_FAILURE;
   }
 
@@ -181,9 +193,11 @@ int BTree::write(const vector<pair<int, int>> &data) {
 void incrementPointersAndData(int &page_pointer, int &page,
                               vector<pair<int, int>> &data,
                               shared_ptr<Buffer> buffer, string filename,
-                              int B) {
+                              int B)
+{
   page_pointer++;
-  if (page_pointer == B) {
+  if (page_pointer == B)
+  {
     page++;
     page_pointer = 0;
     data = buffer->getPage(filename, page).value();
@@ -191,7 +205,8 @@ void incrementPointersAndData(int &page_pointer, int &page,
 }
 
 void addDataToBuffer(vector<pair<int, int>> &page_buffer,
-                     vector<pair<int, int>> &page, int page_pointer, Filter &filter, int &num_data) {
+                     vector<pair<int, int>> &page, int page_pointer, Filter &filter, int &num_data)
+{
   page_buffer.push_back(page[page_pointer]);
   // Merge should only be used in part 3, and therefore a filter should
   // always be present.
@@ -201,10 +216,13 @@ void addDataToBuffer(vector<pair<int, int>> &page_buffer,
 
 void checkAndFlushPageBuffer(vector<pair<int, int>> &page_buffer,
                              int &new_num_leaf_pages, int B, string filename,
-                             shared_ptr<IO> io_handler) {
-  if (page_buffer.size() == B) {
+                             shared_ptr<IO> io_handler)
+{
+  if (page_buffer.size() == B)
+  {
     if (io_handler->writeToFile(filename, page_buffer,
-                                new_num_leaf_pages + 1) == -1) {
+                                new_num_leaf_pages + 1) == -1)
+    {
       throw runtime_error("Error writing to file");
     }
     page_buffer.clear();
@@ -221,12 +239,14 @@ void checkAndFlushPageBuffer(vector<pair<int, int>> &page_buffer,
  * NEWER TREE.
  * @return returns EXIT_FAILURE or EXIT_SUCCESS.
  */
-int BTree::mergeBTrees(string filename1, string filename2) {
-  
+int BTree::mergeBTrees(string filename1, string filename2)
+{
+
   // --- Metadata fetching ---
   int num_pages1 = io_handler->numPagesInFile(filename1);
   int num_pages2 = io_handler->numPagesInFile(filename2);
-  if (num_pages1 == -1 || num_pages2 == -1) {
+  if (num_pages1 == -1 || num_pages2 == -1)
+  {
     return EXIT_FAILURE;
   }
   // Read the metadata of the two files.
@@ -234,7 +254,8 @@ int BTree::mergeBTrees(string filename1, string filename2) {
       this->buffer->getPage(filename1, num_pages1);
   optional<vector<pair<int, int>>> metadata2 =
       this->buffer->getPage(filename2, num_pages2);
-  if (!metadata1.has_value() || !metadata2.has_value()) {
+  if (!metadata1.has_value() || !metadata2.has_value())
+  {
     return EXIT_FAILURE;
   }
 
@@ -266,31 +287,38 @@ int BTree::mergeBTrees(string filename1, string filename2) {
   // --- Merging ---
 
   while (tree1_page <= num_leaf_pages_tree1 &&
-         tree1_page <= num_leaf_pages_tree2) {
-    if (tree1_data[tree1_page_pointer].first == this->INF) {
+         tree1_page <= num_leaf_pages_tree2)
+  {
+    if (tree1_data[tree1_page_pointer].first == this->INF)
+    {
       tree1_page =
-          num_leaf_pages_tree1 + 1;  // Inf is used to pad the end of the page,
+          num_leaf_pages_tree1 + 1; // Inf is used to pad the end of the page,
       // so we can skip the rest of the data here. Should only occur at the last
       // page.
       break;
     }
-    if (tree2_data[tree2_page_pointer].first == this->INF) {
-      tree2_page = num_leaf_pages_tree2 + 1;  // same as above
+    if (tree2_data[tree2_page_pointer].first == this->INF)
+    {
+      tree2_page = num_leaf_pages_tree2 + 1; // same as above
       break;
     }
 
     if (tree1_data[tree1_page_pointer].first <
-        tree2_data[tree2_page_pointer].first) {
+        tree2_data[tree2_page_pointer].first)
+    {
       addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, *this->filter, new_num_data);
       incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
                                this->buffer, filename1, this->B);
-    } else {
+    }
+    else
+    {
       bool same_key = tree1_data[tree1_page_pointer].first ==
                       tree2_data[tree2_page_pointer].first;
       addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, *this->filter, new_num_data);
       incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
                                this->buffer, filename2, this->B);
-      if (same_key) {
+      if (same_key)
+      {
         incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
                                  this->buffer, filename1, this->B);
       }
@@ -301,9 +329,11 @@ int BTree::mergeBTrees(string filename1, string filename2) {
 
   // At this point, either both trees have been finished or one of them has been
   // finished.
-  while (tree1_page <= num_leaf_pages_tree1) {
-    if (tree1_data[tree1_page_pointer].first == this->INF) {
-      break;  // No more useful data.
+  while (tree1_page <= num_leaf_pages_tree1)
+  {
+    if (tree1_data[tree1_page_pointer].first == this->INF)
+    {
+      break; // No more useful data.
     }
     addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, *this->filter, new_num_data);
     incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
@@ -312,9 +342,11 @@ int BTree::mergeBTrees(string filename1, string filename2) {
                             this->filename, this->io_handler);
   }
 
-  while (tree2_page <= num_leaf_pages_tree2) {
-    if (tree2_data[tree2_page_pointer].first == this->INF) {
-      break;  // No more useful data.
+  while (tree2_page <= num_leaf_pages_tree2)
+  {
+    if (tree2_data[tree2_page_pointer].first == this->INF)
+    {
+      break; // No more useful data.
     }
     addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, *this->filter, new_num_data);
     incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
@@ -323,9 +355,11 @@ int BTree::mergeBTrees(string filename1, string filename2) {
                             this->filename, this->io_handler);
   }
   // Flush whatever is left in the buffer
-  if (page_buffer.size() > 0) {
+  if (page_buffer.size() > 0)
+  {
     if (io_handler->writeToFile(this->filename, page_buffer,
-                                new_num_leaf_pages + 1) == -1) {
+                                new_num_leaf_pages + 1) == -1)
+    {
       throw runtime_error("Error writing to file");
     }
     new_num_leaf_pages++;
@@ -337,7 +371,8 @@ int BTree::mergeBTrees(string filename1, string filename2) {
   this->height = computeHeight(this->num_data, this->B);
   // construct internal nodes
   if (io_handler->writeToFile(this->filename, this->contructInternalNodes(),
-                              this->num_leaf_pages + 1) == -1) {
+                              this->num_leaf_pages + 1) == -1)
+  {
     return EXIT_FAILURE;
   }
 
@@ -347,7 +382,8 @@ int BTree::mergeBTrees(string filename1, string filename2) {
                layerStartingIndex(this->height, new_num_data, this->B)) /
            this->B);
   if (io_handler->writeToFile(this->filename, this->constructMetadata(),
-                              total_pages_without_metadata + 1) == -1) {
+                              total_pages_without_metadata + 1) == -1)
+  {
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
@@ -358,7 +394,8 @@ int BTree::mergeBTrees(string filename1, string filename2) {
  *
  * @return A vector of pairs representing the internal nodes of the B-Tree.
  */
-vector<pair<int, int>> BTree::contructInternalNodes() {
+vector<pair<int, int>> BTree::contructInternalNodes()
+{
   // Number of elements would be the first element in the next layer.
   // Height is 1 indexed.
 
@@ -374,7 +411,9 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
 
   // Build up each layer by traversing downnwards down the tree for each
   // element.
-  for (int h = 1; h < this->height; h++) {
+  for (int h = 1; h < this->height; h++)
+  {
+    cout << "height is : " << h << endl;
     int next_layer_index =
         layerStartingIndex(h + 1, this->num_data, this->B);
 
@@ -384,17 +423,21 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
     // For each position in the current layer, find what it's right child should
     // be to populate it.
     for (int layer_element_index = 0;
-         layer_element_index < elements_in_this_layer; layer_element_index++) {
-      int page_index = layer_element_index / (this->B);  // 0 Indexed
+         layer_element_index < elements_in_this_layer; layer_element_index++)
+    {
+      cout << "layer_element_index : " << layer_element_index << endl;
+
+      int page_index = layer_element_index / (this->B); // 0 Indexed
 
       int element_index_in_page =
-          layer_element_index - (page_index * this->B);  // 0 indexed.
+          layer_element_index - (page_index * this->B); // 0 indexed.
 
       int right_child_page =
           page_index * (this->B + 1) + element_index_in_page + 1;
 
       // Keep calculating until we reach the leaf node.
-      for (int i = 0; i < h - 1; i++) {
+      for (int i = 0; i < h - 1; i++)
+      {
         right_child_page = right_child_page * (this->B + 1);
       }
 
@@ -403,29 +446,36 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
       int offset = layerStartingIndex(1, this->num_data, this->B);
 
       // If the right child is out of bounds set it to infinity.
-      if (right_child_page * this->B > this->num_data) {
+      if (right_child_page + 1 > this->num_leaf_pages)
+      {
         internal_nodes[this_layer_index + layer_element_index - offset] = {
             BTree::INF, BTree::INF};
         continue;
       }
 
-      int child_page_number = right_child_page + 1;  // add 1 because 1 indexed.
-
+      cout << "right child page * B is : " << right_child_page * this->B << endl;
+      cout << "num data is : " << this->num_data << endl;
+      int child_page_number = right_child_page + 1; // add 1 because 1 indexed.
+      cout << "getting leaf page with number " << child_page_number << endl;
+      cout << "num leaf pages is " << this->num_leaf_pages << endl;
       optional<vector<pair<int, int>>> leaf_page =
           this->buffer->getPage(this->filename, child_page_number);
-
-      if (!leaf_page.has_value()) {
+      cout << "found leaf page" << endl;
+      if (!leaf_page.has_value())
+      {
         string error_message = "expecting leaf page to be present at " +
                                to_string(child_page_number);
         throw runtime_error(error_message);
       }
       vector<pair<int, int>> leaf_data = leaf_page.value();
 
+      cout << "setting leaf data" << endl;
+      cout << "first element is : " << leaf_data[0].first << endl;
       internal_nodes[this_layer_index + layer_element_index - offset] =
-          leaf_data[0];  // Always the first element.
+          leaf_data[0]; // Always the first element.
     }
   }
-  cout << "Btree constructInternalNodes return" <<endl;
+  cout << "Btree constructInternalNodes return" << endl;
 
   return internal_nodes;
 }
@@ -439,27 +489,31 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
  * @param page_location The index where the page starts in the btree.
  * @return A pair of <index, <key, value>>
  */
-pair<int, pair<int, int>> BTree::findKeyInPage(int key, int page_location) {
+pair<int, pair<int, int>> BTree::findKeyInPage(int key, int page_location)
+{
   int page_number =
-      floor(static_cast<double>(page_location) / this->B) + 1;  // 1 indexed
+      floor(static_cast<double>(page_location) / this->B) + 1; // 1 indexed
   optional<vector<pair<int, int>>> page =
       this->buffer->getPage(this->filename, page_number);
-  if (!page.has_value()) {
+  if (!page.has_value())
+  {
     string error_message = "expecting to find key: " + to_string(key) +
                            " in page: " + to_string(page_number);
     throw runtime_error(error_message);
   }
   vector<pair<int, int>> data = page.value();
-  for (int i = 0; i < this->B; i++) {
-    if (key <= data[i].first) {
+  for (int i = 0; i < this->B; i++)
+  {
+    if (key <= data[i].first)
+    {
       return make_pair(i, data[i]);
     }
   }
   return make_pair(
       this->B,
       make_pair(this->INF,
-                this->INF));  // If we get here, it means we need the first
-                              // element of the next page. INF as a placeholder.
+                this->INF)); // If we get here, it means we need the first
+                             // element of the next page. INF as a placeholder.
 };
 
 /**
@@ -469,11 +523,13 @@ pair<int, pair<int, int>> BTree::findKeyInPage(int key, int page_location) {
  * @param key The key to find in the BTree.
  * @return int The index of the key or next largest key in the BTree.
  */
-int BTree::getIndexInBTree(int key) {
+int BTree::getIndexInBTree(int key)
+{
   int page_index = 0;
   // Loop through each layer of the BTree, start at height - 1 since 1 indexed.
   // Stop at 0 since layer 0 is the leaf layer and is handled differently.
-  for (int h = this->height - 1; h > 0; h--) {
+  for (int h = this->height - 1; h > 0; h--)
+  {
     int level_index = layerStartingIndex(h, this->num_data, this->B);
     int corresponding_key_index =
         findKeyInPage(key, level_index + page_index).first;
@@ -486,6 +542,57 @@ int BTree::getIndexInBTree(int key) {
 }
 
 /**
+ * @brief Get the index, page, key and value of the key in the BTree.
+ * Returns the next largest key if the key is not found.
+ * If there is no next largest key, returns -1 for all values.
+ *
+ * @param key The key to find in the BTree.
+ * @return {int, int, int, int} The index, page, key and value of the key in the BTree.
+ */
+
+vector<int> BTree::getKeyData(int key)
+{
+  int page_index = 0;
+  // Loop through each layer of the BTree, start at height - 1 since 1 indexed.
+  // Stop at 0 since layer 0 is the leaf layer and is handled differently.
+  for (int h = this->height - 1; h > 0; h--)
+  {
+    int level_index = layerStartingIndex(h, this->num_data, this->B);
+    int corresponding_key_index =
+        findKeyInPage(key, level_index + page_index).first;
+    page_index = page_index * (this->B + 1) + corresponding_key_index * this->B;
+  };
+
+  int page_number = floor(static_cast<double>(page_index) / this->B) + 1; // 1 indexed
+  if (page_number > this->num_leaf_pages)
+  {
+    return {-1, -1, -1, -1};
+  }
+
+  // Valid page number, find the item we want, or the next largest item.
+  pair<int, pair<int, int>> keyInPage = findKeyInPage(key, page_index);
+  int index_in_page = keyInPage.first;
+  pair<int, int> resulting_pair = keyInPage.second;
+
+  // The key we want is not in the btree, and the next largest key is on the next page (if it exists).
+  if (resulting_pair.first == this->INF)
+  {
+    // check that the next page exists. If it doesn't, return -1 for all values.
+    if (page_number + 1 > this->num_leaf_pages)
+    {
+      return {-1, -1, -1, -1};
+    }
+    else
+    {
+      vector<pair<int, int>> next_page = this->buffer->getPage(this->filename, page_number + 1).value();
+      return {0, page_number + 1, next_page[0].first, next_page[0].second};
+    }
+  }
+
+  return {index_in_page, page_number, resulting_pair.first, resulting_pair.second};
+}
+
+/**
  * @brief Gets the value associated with the given key in the B-tree.
  *
  * Btree implementation since we also include binary search implementation.
@@ -494,34 +601,45 @@ int BTree::getIndexInBTree(int key) {
  * @return An optional containing the value of the key if found,
  *         otherwise null
  */
-optional<int> BTree::btreeGet(int key) {
-  int index = getIndexInBTree(key);
-  pair<int, pair<int, int>> result = findKeyInPage(key, index);
-  // If the key is what we are looking for, return the value.
-  // (If the key is not found, it returns the next largest key)
-  if (result.second.first == key) {
-    return result.second.second;
+optional<int> BTree::btreeGet(int key)
+{
+  // int index = getIndexInBTree(key);
+  // pair<int, pair<int, int>> result = findKeyInPage(key, index);
+  // // If the key is what we are looking for, return the value.
+  // // (If the key is not found, it returns the next largest key)
+  // if (result.second.first == key)
+  // {
+  //   return result.second.second;
+  // }
+  vector<int> key_data = getKeyData(key);
+  if (key_data[2] != key)
+  {
+    return nullopt;
   }
-  return nullopt;
+  return key_data[3];
 };
 
 // BINARY SEARCH METHODS COPIED FROM SortedList.cpp
-optional<int> BTree::binarySearchGet(int key) {
+optional<int> BTree::binarySearchGet(int key)
+{
   // Find the page which contains the key.
   optional<pair<vector<pair<int, int>>, int>> page_and_num =
       findPageWithValueEqualToOrGraterThan(key);
-  if (page_and_num == nullopt) {
+  if (page_and_num == nullopt)
+  {
     return nullopt;
   }
   vector<pair<int, int>> page = page_and_num.value().first;
   optional<pair<pair<int, int>, int>> result =
       FindEqualToOrNextLargestInPage(key, page);
-  if (!result) {
+  if (!result)
+  {
     return nullopt;
   }
   pair<int, int> key_value = result.value().first;
   // If the key result is the key we are looking for, return the value.
-  if (key_value.first == key) {
+  if (key_value.first == key)
+  {
     return key_value.second;
   }
   return nullopt;
@@ -530,7 +648,8 @@ optional<int> BTree::binarySearchGet(int key) {
 // Finds a page which contains the key, or the next largest value than the key.
 // Returns the page, and the page number if found, or nullopt if not found.
 optional<pair<vector<pair<int, int>>, int>>
-BTree::findPageWithValueEqualToOrGraterThan(int key) {
+BTree::findPageWithValueEqualToOrGraterThan(int key)
+{
   int num_pages = this->num_leaf_pages;
   // Pages are 1 indexed
   int start = 1;
@@ -538,13 +657,15 @@ BTree::findPageWithValueEqualToOrGraterThan(int key) {
 
   // Try to find key can be within the page.
   vector<pair<int, int>> pairs;
-  while (start <= end) {
+  while (start <= end)
+  {
     int mid = start + (end - start) / 2;
     optional<vector<pair<int, int>>> page =
         io_handler->readPageFromFile(filename, mid);
 
     // Error while reading page.
-    if (!page) {
+    if (!page)
+    {
       return nullopt;
     }
 
@@ -552,18 +673,21 @@ BTree::findPageWithValueEqualToOrGraterThan(int key) {
 
     // If first_element <= key <= last_element, then the key must be in this
     // page if it exists. Otherwise, the next largest value is in this page.
-    if (pairs[0].first <= key && key <= pairs[pairs.size() - 1].first) {
+    if (pairs[0].first <= key && key <= pairs[pairs.size() - 1].first)
+    {
       return make_pair(pairs, mid);
     }
 
     // If the key is larger than the last value, then we shift our search space
     // right
-    else if (pairs[pairs.size() - 1].first < key) {
+    else if (pairs[pairs.size() - 1].first < key)
+    {
       start = mid + 1;
     }
     // If they key is smaller than the first value, then we shift our search
     // space to the left
-    else if (key < pairs[0].first) {
+    else if (key < pairs[0].first)
+    {
       end = mid - 1;
     }
   }
@@ -571,7 +695,8 @@ BTree::findPageWithValueEqualToOrGraterThan(int key) {
   // Then start contains the next largest value.
 
   // Check if start is a valid page number.
-  if (start > num_pages) {
+  if (start > num_pages)
+  {
     return nullopt;
   }
 
@@ -581,23 +706,31 @@ BTree::findPageWithValueEqualToOrGraterThan(int key) {
 }
 
 optional<pair<pair<int, int>, int>> BTree::FindEqualToOrNextLargestInPage(
-    int key, vector<pair<int, int>> page) {
+    int key, vector<pair<int, int>> page)
+{
   int low = 0;
   int high = page.size() - 1;
 
-  while (low <= high) {
+  while (low <= high)
+  {
     int mid = low + (high - low) / 2;
-    if (page[mid].first == key) {
+    if (page[mid].first == key)
+    {
       return make_pair(page[mid], mid);
-    } else if (page[mid].first < key) {
+    }
+    else if (page[mid].first < key)
+    {
       low = mid + 1;
-    } else {
+    }
+    else
+    {
       high = mid - 1;
     }
   }
   // If we reach here, the key is at low
   // unless low is out of bounds
-  if (low >= page.size()) {
+  if (low >= page.size())
+  {
     return nullopt;
   }
   return make_pair(page[low], low);
@@ -611,15 +744,19 @@ optional<pair<pair<int, int>, int>> BTree::FindEqualToOrNextLargestInPage(
  * @return An optional integer containing the value associated with the key,
  *         or an empty optional if the key is not found.
  */
-optional<int> BTree::get(int key) {
+optional<int> BTree::get(int key)
+{
   // If we have a filter present, check the filter first.
-  if (this->filter != nullptr) {
-    if (!this->filter->hasKey(key)) {
+  if (this->filter != nullptr)
+  {
+    if (!this->filter->hasKey(key))
+    {
       return nullopt;
     }
   }
 
-  if (this->use_binary_search) {
+  if (this->use_binary_search)
+  {
     return binarySearchGet(key);
   }
   return btreeGet(key);
@@ -633,17 +770,20 @@ optional<int> BTree::get(int key) {
  * @return A vector of key-value pairs where the keys are within the specified
  * range.
  */
-vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
+vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd)
+{
   vector<pair<int, int>> page_values;
   int index;
   int page_num;
 
   // Populate variables using binary search
-  if (this->use_binary_search) {
+  if (this->use_binary_search)
+  {
     // Find the page which contains the rangeStart, or the next largest value.
     optional<pair<vector<pair<int, int>>, int>> page_and_num =
         findPageWithValueEqualToOrGraterThan(rangeStart);
-    if (page_and_num == nullopt) {
+    if (page_and_num == nullopt)
+    {
       return {};
     }
     page_values = page_and_num.value().first;
@@ -651,7 +791,8 @@ vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
 
     optional<pair<pair<int, int>, int>> result =
         FindEqualToOrNextLargestInPage(rangeStart, page_values);
-    if (result == nullopt) {
+    if (result == nullopt)
+    {
       return {};
     }
 
@@ -659,21 +800,25 @@ vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
     index = result.value().second;
   }
   // Populate variables using B-tree search
-  else {
+  else
+  {
     int index_in_btree = getIndexInBTree(rangeStart);
-    page_num = (index_in_btree / this->B) + 1;  // 1 indexed
+    page_num = (index_in_btree / this->B) + 1; // 1 indexed
     index = index_in_btree % this->B;
     page_values = io_handler->readPageFromFile(filename, page_num).value();
   }
   vector<pair<int, int>> res;
   int total_pages = io_handler->numPagesInFile(filename);
-  while (page_values[index].first <= rangeEnd) {
+  while (page_values[index].first <= rangeEnd)
+  {
     res.push_back(page_values[index]);
     index++;
 
-    if (index >= page_values.size()) {
+    if (index >= page_values.size())
+    {
       page_num++;
-      if (page_num > total_pages) {
+      if (page_num > total_pages)
+      {
         break;
       }
       page_values = io_handler->readPageFromFile(filename, page_num).value();
@@ -690,9 +835,11 @@ vector<pair<int, int>> BTree::scan(int rangeStart, int rangeEnd) {
  * @param filename The new name for the file.
  * @throws runtime_error if the rename fails.
  */
-void BTree::rename(string filename) {
+void BTree::rename(string filename)
+{
   int renamed = this->io_handler->renameFile(this->filename, filename);
-  if (renamed == -1) {
+  if (renamed == -1)
+  {
     string error_msg = "Error renaming file: " + this->filename;
     throw runtime_error(error_msg);
   }

@@ -19,18 +19,26 @@ public:
     virtual int write(const vector<pair<int, int>> &data) = 0;
     virtual optional<int> get(int key) = 0; // Search the corresponding value for this key.
 
-    /*
-     * Scans the SST file and returns all key-value pairs that are in the given target range.
-     * The range is exclusive of both endpints.
+    /**
+     * @brief Scans the SST file and returns all key-value pairs that are in the given target range.
+     * The range is exclusive of both endpoints.
      *
-     * Parameters:
-     * - rangeStart: the start of the range (exclusive)
-     * - rangeEnd: the end of the range (exclusive)
-     *
-     * Returns:
-     * - A vector of key-value pairs that are in the given range.
+     * @param rangeStart The start of the range (exclusive).
+     * @param rangeEnd The end of the range (exclusive).
+     * @return vector<pair<int, int>> A vector of key-value pairs that are in the given range.
      */
     virtual vector<pair<int, int>> scan(int rangeStart, int rangeEnd) = 0;
+
+    /**
+     * @brief Get the index, page, key and value of the key in the BTree.
+     * Returns the next largest key if the key is not found.
+     * If there is no next largest key, returns -1 for all values.
+     *
+     * @param key The key to find in the BTree.
+     * @return {int, int, int, int} The index, page, key and value of the key in the BTree.
+     */
+
+    virtual vector<int> getKeyData(int key) = 0;
 
     virtual ~Sst() = default;
 };

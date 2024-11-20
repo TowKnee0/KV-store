@@ -6,46 +6,42 @@
 
 using namespace std;
 
-SortedList::SortedList(string filename, string dbname, shared_ptr<IO> handler) {
+SortedList::SortedList(string filename, string dbname, shared_ptr<IO> handler)
+{
   this->filename = filename;
   this->dbname = dbname;
   this->io_handler = handler;
 }
 
-int SortedList::write(const vector<pair<int, int>> &data) {
-  if (io_handler->writeToFile(filename, data) == -1) {
+int SortedList::write(const vector<pair<int, int>> &data)
+{
+  if (io_handler->writeToFile(filename, data) == -1)
+  {
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
 }
 
-optional<int> SortedList::get(int key) {
-  // Find the page which contains the key.
-  optional<pair<vector<pair<int, int>>, int>> page_and_num =
-      findPageWithValueEqualToOrGraterThan(key);
-  if (page_and_num == nullopt) {
-    return nullopt;
-  }
-  vector<pair<int, int>> page = page_and_num.value().first;
-  optional<pair<pair<int, int>, int>> result =
-      FindEqualToOrNextLargestInPage(key, page);
-  if (!result) {
-    return nullopt;
-  }
-  pair<int, int> key_value = result.value().first;
+optional<int> SortedList::get(int key)
+{
+  vector<int> key_data = getKeyData(key);
+
   // If the key result is the key we are looking for, return the value.
-  if (key_value.first == key) {
-    return key_value.second;
+  if (key_data[2] == key)
+  {
+    return key_data[3];
   }
 
   return nullopt;
 }
 
-vector<pair<int, int>> SortedList::scan(int rangeStart, int rangeEnd) {
+vector<pair<int, int>> SortedList::scan(int rangeStart, int rangeEnd)
+{
   // Find the page which contains the rangeStart, or the next largest value.
   optional<pair<vector<pair<int, int>>, int>> page_and_num =
       findPageWithValueEqualToOrGraterThan(rangeStart);
-  if (page_and_num == nullopt) {
+  if (page_and_num == nullopt)
+  {
     return {};
   }
   vector<pair<int, int>> page_values = page_and_num.value().first;
@@ -53,7 +49,8 @@ vector<pair<int, int>> SortedList::scan(int rangeStart, int rangeEnd) {
 
   optional<pair<pair<int, int>, int>> result =
       FindEqualToOrNextLargestInPage(rangeStart, page_values);
-  if (result == nullopt) {
+  if (result == nullopt)
+  {
     return {};
   }
 
@@ -63,13 +60,16 @@ vector<pair<int, int>> SortedList::scan(int rangeStart, int rangeEnd) {
   vector<pair<int, int>> res;
   int total_pages = io_handler->numPagesInFile(filename);
 
-  while (page_values[index].first <= rangeEnd) {
+  while (page_values[index].first <= rangeEnd)
+  {
     res.push_back(page_values[index]);
     index++;
 
-    if (index >= page_values.size()) {
+    if (index >= page_values.size())
+    {
       page_num++;
-      if (page_num > total_pages) {
+      if (page_num > total_pages)
+      {
         break;
       }
       page_values = io_handler->readPageFromFile(filename, page_num).value();
@@ -83,7 +83,8 @@ vector<pair<int, int>> SortedList::scan(int rangeStart, int rangeEnd) {
 // Finds a page which contains the key, or the next largest value than the key.
 // Returns the page, and the page number if found, or nullopt if not found.
 optional<pair<vector<pair<int, int>>, int>>
-SortedList::findPageWithValueEqualToOrGraterThan(int key) {
+SortedList::findPageWithValueEqualToOrGraterThan(int key)
+{
   int num_pages = io_handler->numPagesInFile(filename);
 
   // Pages are 1 indexed
@@ -92,13 +93,15 @@ SortedList::findPageWithValueEqualToOrGraterThan(int key) {
 
   // Try to find key can be within the page.
   vector<pair<int, int>> pairs;
-  while (start <= end) {
+  while (start <= end)
+  {
     int mid = start + (end - start) / 2;
     optional<vector<pair<int, int>>> page =
         io_handler->readPageFromFile(filename, mid);
 
     // Error while reading page.
-    if (!page) {
+    if (!page)
+    {
       return nullopt;
     }
 
@@ -106,18 +109,21 @@ SortedList::findPageWithValueEqualToOrGraterThan(int key) {
 
     // If first_element <= key <= last_element, then the key must be in this
     // page if it exists. Otherwise, the next largest value is in this page.
-    if (pairs[0].first <= key && key <= pairs[pairs.size() - 1].first) {
+    if (pairs[0].first <= key && key <= pairs[pairs.size() - 1].first)
+    {
       return make_pair(pairs, mid);
     }
 
     // If the key is larger than the last value, then we shift our search space
     // right
-    else if (pairs[pairs.size() - 1].first < key) {
+    else if (pairs[pairs.size() - 1].first < key)
+    {
       start = mid + 1;
     }
     // If they key is smaller than the first value, then we shift our search
     // space to the left
-    else if (key < pairs[0].first) {
+    else if (key < pairs[0].first)
+    {
       end = mid - 1;
     }
   }
@@ -125,7 +131,8 @@ SortedList::findPageWithValueEqualToOrGraterThan(int key) {
   // Then start contains the next largest value.
 
   // Check if start is a valid page number.
-  if (start > num_pages) {
+  if (start > num_pages)
+  {
     return nullopt;
   }
 
@@ -138,24 +145,51 @@ SortedList::findPageWithValueEqualToOrGraterThan(int key) {
 // the the next largest value. Returns a pair of <<key, value>, page_index> if
 // found, or nullopt if not found.
 optional<pair<pair<int, int>, int>> SortedList::FindEqualToOrNextLargestInPage(
-    int key, vector<pair<int, int>> page) {
+    int key, vector<pair<int, int>> page)
+{
   int low = 0;
   int high = page.size() - 1;
 
-  while (low <= high) {
+  while (low <= high)
+  {
     int mid = low + (high - low) / 2;
-    if (page[mid].first == key) {
+    if (page[mid].first == key)
+    {
       return make_pair(page[mid], mid);
-    } else if (page[mid].first < key) {
+    }
+    else if (page[mid].first < key)
+    {
       low = mid + 1;
-    } else {
+    }
+    else
+    {
       high = mid - 1;
     }
   }
   // If we reach here, the key is at low
   // unless low is out of bounds
-  if (low >= page.size()) {
+  if (low >= page.size())
+  {
     return nullopt;
   }
   return make_pair(page[low], low);
+}
+
+vector<int> SortedList::getKeyData(int key)
+{
+  optional<pair<vector<pair<int, int>>, int>> page_and_num =
+      findPageWithValueEqualToOrGraterThan(key);
+  if (page_and_num == nullopt)
+  {
+    return {-1, -1, -1, -1};
+  }
+  vector<pair<int, int>> page = page_and_num.value().first;
+  optional<pair<pair<int, int>, int>> result =
+      FindEqualToOrNextLargestInPage(key, page);
+  if (!result)
+  {
+    return {-1, -1, -1, -1};
+  }
+  pair<int, int> key_value = result.value().first;
+  return {page_and_num.value().second, result.value().second, key_value.first, key_value.second};
 }

@@ -9,40 +9,48 @@
 #include "io_handler.h"
 using namespace std;
 
-class IOHandlerTest : public ::testing::Test {
+class IOHandlerTest : public ::testing::Test
+{
 protected:
-    IOHandler* ioHandler;
+    IOHandler *ioHandler;
     string dbname = "testdb";
     string filename = "testfile";
 
-    void SetUp() override {
+    void SetUp() override
+    {
         ioHandler = new IOHandler(dbname);
         filesystem::remove_all("data/" + dbname);
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         delete ioHandler;
         filesystem::remove_all("data/" + dbname);
     }
 };
 
-TEST_F(IOHandlerTest, TestGetPageSize) {
+TEST_F(IOHandlerTest, TestGetPageSize)
+{
     EXPECT_EQ(ioHandler->getPageSize(), 4096);
 }
 
-TEST_F(IOHandlerTest, TestGetPairSize) {
+TEST_F(IOHandlerTest, TestGetPairSize)
+{
     EXPECT_EQ(ioHandler->getPairSize(), sizeof(int) * 2);
 }
 
-TEST_F(IOHandlerTest, TestConstructFilePath) {
+TEST_F(IOHandlerTest, TestConstructFilePath)
+{
     EXPECT_EQ(ioHandler->constructFilePath(), "data/" + dbname + "/");
 }
 
-TEST_F(IOHandlerTest, TestConstructFileName) {
+TEST_F(IOHandlerTest, TestConstructFileName)
+{
     EXPECT_EQ(ioHandler->constructFileName(filename), filename + ".bin");
 }
 
-TEST_F(IOHandlerTest, TestWriteToFile) {
+TEST_F(IOHandlerTest, TestWriteToFile)
+{
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
     EXPECT_EQ(ioHandler->writeToFile(filename, data), 1);
 
@@ -50,7 +58,8 @@ TEST_F(IOHandlerTest, TestWriteToFile) {
     EXPECT_TRUE(filesystem::exists(fullPath));
 }
 
-TEST_F(IOHandlerTest, TestWriteToFileAtPage) {
+TEST_F(IOHandlerTest, TestWriteToFileAtPage)
+{
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
     EXPECT_EQ(ioHandler->writeToFile(filename, data, 1), 1);
 
@@ -58,7 +67,8 @@ TEST_F(IOHandlerTest, TestWriteToFileAtPage) {
     EXPECT_TRUE(filesystem::exists(fullPath));
 }
 
-TEST_F(IOHandlerTest, TestReadPageFromFile) {
+TEST_F(IOHandlerTest, TestReadPageFromFile)
+{
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
     ioHandler->writeToFile(filename, data);
 
@@ -67,7 +77,17 @@ TEST_F(IOHandlerTest, TestReadPageFromFile) {
     EXPECT_EQ(readData.value(), data);
 }
 
-TEST_F(IOHandlerTest, TestGetDbFilenames) {
+TEST_F(IOHandlerTest, TestReadPageFromFileInvalidPage)
+{
+    vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
+    ioHandler->writeToFile(filename, data);
+
+    optional<vector<pair<int, int>>> readData = ioHandler->readPageFromFile(filename, 2);
+    EXPECT_FALSE(readData.has_value());
+}
+
+TEST_F(IOHandlerTest, TestGetDbFilenames)
+{
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
     ioHandler->writeToFile(filename, data);
 
@@ -76,38 +96,46 @@ TEST_F(IOHandlerTest, TestGetDbFilenames) {
     EXPECT_EQ(filenames[0], filename + ".bin");
 }
 
-TEST_F(IOHandlerTest, TestNumPagesInFile) {
+TEST_F(IOHandlerTest, TestNumPagesInFile)
+{
     vector<pair<int, int>> data;
-    for (int i = 0; i < ioHandler->getPageSize() / 8; ++i) {
+    for (int i = 0; i < ioHandler->getPageSize() / 8; ++i)
+    {
         data.push_back({i, i});
     }
 
-    for (int i = 1; i < 6; ++i) {
+    for (int i = 1; i < 6; ++i)
+    {
         ioHandler->writeToFile(filename, data, i);
     }
 
     EXPECT_EQ(ioHandler->numPagesInFile(filename), 5);
 }
-TEST_F(IOHandlerTest, TestWriteAndReadFile) {
+TEST_F(IOHandlerTest, TestWriteAndReadFile)
+{
     vector<pair<int, int>> data;
     int count = 0;
-    for (int i = 0; i < ioHandler->getPageSize() / 8; ++i) {
+    for (int i = 0; i < ioHandler->getPageSize() / 8; ++i)
+    {
         data.push_back({i, count++});
     }
 
-    for (int i = 1; i < 6; ++i) {
+    for (int i = 1; i < 6; ++i)
+    {
         ioHandler->writeToFile(filename, data, i);
     }
 
     // Read the data back and make sure it is correct.
-    for (int i = 1; i < 6; ++i) {
+    for (int i = 1; i < 6; ++i)
+    {
         optional<vector<pair<int, int>>> readData = ioHandler->readPageFromFile(filename, i);
         ASSERT_TRUE(readData.has_value());
         EXPECT_EQ(readData.value(), data);
     }
 }
 
-TEST_F(IOHandlerTest, TestDeleteFile) {
+TEST_F(IOHandlerTest, TestDeleteFile)
+{
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
     ioHandler->writeToFile(filename, data);
 
@@ -118,7 +146,8 @@ TEST_F(IOHandlerTest, TestDeleteFile) {
     EXPECT_FALSE(filesystem::exists(fullPath));
 }
 
-TEST_F(IOHandlerTest, TestRenameFile) {
+TEST_F(IOHandlerTest, TestRenameFile)
+{
     vector<pair<int, int>> data = {{1, 2}, {3, 4}, {5, 6}};
     ioHandler->writeToFile(filename, data);
 
