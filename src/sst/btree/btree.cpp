@@ -134,7 +134,7 @@ int BTree::write(const vector<pair<int, int>> &data) {
     return EXIT_FAILURE;
   }
 
-
+  cout << "Btree write 1" << endl;
   // If we have a filter, add all the keys to the filter.
   // Part 3 only.
   if (this->filter != nullptr) {
@@ -143,20 +143,33 @@ int BTree::write(const vector<pair<int, int>> &data) {
     }
   }
 
+  cout << "Btree write 2" << endl;
+
+
   this->num_leaf_pages =
       ceil(static_cast<double>(data.size()) /
            this->B);  // io_handler->numPagesInFile(filename);
   this->num_data = data.size();
   this->height = computeHeight(this->num_data, this->B);
 
+  cout << "Btree write 3" << endl;
+
+
   if (io_handler->writeToFile(this->filename, this->contructInternalNodes(),
                               this->num_leaf_pages + 1) == -1) {
     return EXIT_FAILURE;
   }
+
+  cout << "Btree write 4" << endl;
+
+
   int total_pages_without_metadata =
       ceil(static_cast<double>(
                layerStartingIndex(this->height, data.size(), this->B)) /
            this->B);  // io_handler->numPagesInFile(this->filename);
+
+  cout << "Btree write 5" << endl;
+
   if (io_handler->writeToFile(this->filename, this->constructMetadata(),
                               total_pages_without_metadata + 1) == -1) {
     return EXIT_FAILURE;
@@ -348,6 +361,9 @@ int BTree::mergeBTrees(string filename1, string filename2) {
 vector<pair<int, int>> BTree::contructInternalNodes() {
   // Number of elements would be the first element in the next layer.
   // Height is 1 indexed.
+
+  cout << "height: " << this->height << " num_data: " << this->num_data << " num_leaf_pages: " << this->num_leaf_pages << " B: " << this->B << endl;
+
   int total_btree_size =
       layerStartingIndex(this->height, this->num_data, this->B);
 
@@ -358,11 +374,11 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
 
   // Build up each layer by traversing downnwards down the tree for each
   // element.
-  for (int height = 1; height < this->height; height++) {
+  for (int h = 1; h < this->height; h++) {
     int next_layer_index =
-        layerStartingIndex(height + 1, this->num_data, this->B);
+        layerStartingIndex(h + 1, this->num_data, this->B);
 
-    int this_layer_index = layerStartingIndex(height, this->num_data, this->B);
+    int this_layer_index = layerStartingIndex(h, this->num_data, this->B);
     int elements_in_this_layer = next_layer_index - this_layer_index;
 
     // For each position in the current layer, find what it's right child should
@@ -378,7 +394,7 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
           page_index * (this->B + 1) + element_index_in_page + 1;
 
       // Keep calculating until we reach the leaf node.
-      for (int i = 0; i < height - 1; i++) {
+      for (int i = 0; i < h - 1; i++) {
         right_child_page = right_child_page * (this->B + 1);
       }
 
@@ -409,6 +425,8 @@ vector<pair<int, int>> BTree::contructInternalNodes() {
           leaf_data[0];  // Always the first element.
     }
   }
+  cout << "Btree constructInternalNodes return" <<endl;
+
   return internal_nodes;
 }
 
