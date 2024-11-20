@@ -74,6 +74,7 @@ int layerStartingIndex(int layer, int num_keys, int B)
 void BTree::loadMetadata()
 {
   int num_pages = this->io_handler->numPagesInFile(this->filename);
+  cout << "Num pages: " << num_pages << endl;
   if (num_pages == -1)
   {
     return;
@@ -83,8 +84,10 @@ void BTree::loadMetadata()
       this->buffer->getPage(this->filename, num_pages);
   if (!metadata.has_value())
   {
+    cout << "No metadata found" << endl;
     return;
   };
+  cout << "Metadata found" << endl;
   vector<pair<int, int>> metadata_data = metadata.value();
   this->num_data = metadata_data[BTree::B_TREE_NUM_DATA_INDEX].second;
   this->height = metadata_data[BTree::B_TREE_HEIGHT_INDEX].second;
@@ -145,7 +148,6 @@ int BTree::write(const vector<pair<int, int>> &data)
     return EXIT_FAILURE;
   }
 
-  cout << "Btree write 1" << endl;
   // If we have a filter, add all the keys to the filter.
   // Part 3 only.
   if (this->filter != nullptr)
@@ -156,15 +158,11 @@ int BTree::write(const vector<pair<int, int>> &data)
     }
   }
 
-  cout << "Btree write 2" << endl;
-
   this->num_leaf_pages =
       ceil(static_cast<double>(data.size()) /
            this->B); // io_handler->numPagesInFile(filename);
   this->num_data = data.size();
   this->height = computeHeight(this->num_data, this->B);
-
-  cout << "Btree write 3" << endl;
 
   if (io_handler->writeToFile(this->filename, this->contructInternalNodes(),
                               this->num_leaf_pages + 1) == -1)
@@ -172,14 +170,10 @@ int BTree::write(const vector<pair<int, int>> &data)
     return EXIT_FAILURE;
   }
 
-  cout << "Btree write 4" << endl;
-
   int total_pages_without_metadata =
       ceil(static_cast<double>(
                layerStartingIndex(this->height, data.size(), this->B)) /
            this->B); // io_handler->numPagesInFile(this->filename);
-
-  cout << "Btree write 5" << endl;
 
   if (io_handler->writeToFile(this->filename, this->constructMetadata(),
                               total_pages_without_metadata + 1) == -1)
@@ -399,8 +393,6 @@ vector<pair<int, int>> BTree::contructInternalNodes()
   // Number of elements would be the first element in the next layer.
   // Height is 1 indexed.
 
-  cout << "height: " << this->height << " num_data: " << this->num_data << " num_leaf_pages: " << this->num_leaf_pages << " B: " << this->B << endl;
-
   int total_btree_size =
       layerStartingIndex(this->height, this->num_data, this->B);
 
@@ -413,7 +405,6 @@ vector<pair<int, int>> BTree::contructInternalNodes()
   // element.
   for (int h = 1; h < this->height; h++)
   {
-    cout << "height is : " << h << endl;
     int next_layer_index =
         layerStartingIndex(h + 1, this->num_data, this->B);
 
@@ -425,7 +416,6 @@ vector<pair<int, int>> BTree::contructInternalNodes()
     for (int layer_element_index = 0;
          layer_element_index < elements_in_this_layer; layer_element_index++)
     {
-      cout << "layer_element_index : " << layer_element_index << endl;
 
       int page_index = layer_element_index / (this->B); // 0 Indexed
 
@@ -453,14 +443,9 @@ vector<pair<int, int>> BTree::contructInternalNodes()
         continue;
       }
 
-      cout << "right child page * B is : " << right_child_page * this->B << endl;
-      cout << "num data is : " << this->num_data << endl;
       int child_page_number = right_child_page + 1; // add 1 because 1 indexed.
-      cout << "getting leaf page with number " << child_page_number << endl;
-      cout << "num leaf pages is " << this->num_leaf_pages << endl;
       optional<vector<pair<int, int>>> leaf_page =
           this->buffer->getPage(this->filename, child_page_number);
-      cout << "found leaf page" << endl;
       if (!leaf_page.has_value())
       {
         string error_message = "expecting leaf page to be present at " +
@@ -469,13 +454,10 @@ vector<pair<int, int>> BTree::contructInternalNodes()
       }
       vector<pair<int, int>> leaf_data = leaf_page.value();
 
-      cout << "setting leaf data" << endl;
-      cout << "first element is : " << leaf_data[0].first << endl;
       internal_nodes[this_layer_index + layer_element_index - offset] =
           leaf_data[0]; // Always the first element.
     }
   }
-  cout << "Btree constructInternalNodes return" << endl;
 
   return internal_nodes;
 }
@@ -515,6 +497,8 @@ pair<int, pair<int, int>> BTree::findKeyInPage(int key, int page_location)
                 this->INF)); // If we get here, it means we need the first
                              // element of the next page. INF as a placeholder.
 };
+
+string BTree::getFilename() { return this->filename; }
 
 /**
  * @brief Get the index, page, key and value of the key in the BTree.
@@ -745,3 +729,5 @@ void BTree::rename(string filename)
   }
   this->filename = filename;
 };
+
+int BTree::getNumDataPages() { return this->num_leaf_pages; }

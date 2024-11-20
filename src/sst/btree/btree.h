@@ -59,7 +59,9 @@ public:
     virtual int write(const vector<pair<int, int>> &data);
     virtual optional<int> get(int key); // Search the corresponding value for this key.
     virtual int mergeBTrees(string filename1, string filename2);
-    vector<int> getKeyData(int key);
+    virtual vector<int> getKeyData(int key);
+    virtual string getFilename();
+    virtual int getNumDataPages();
 };
 
 #endif

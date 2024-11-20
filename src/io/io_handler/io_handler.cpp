@@ -135,7 +135,6 @@ int IOHandler::writeToFile(const string filename, const vector<pair<int, int>> &
 optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filename, int pageNumber)
 {
     // Calculate the memory address for the page
-    cout << "Reading page " << pageNumber << " from file " << filename << endl;
     size_t pageMemoryAddress = (pageNumber - 1) * PAGE_SIZE;
     string fullPath = constructFilePath() + constructFileName(filename);
     int fd = open(fullPath.c_str(), O_DIRECT | O_RDONLY);
@@ -156,7 +155,6 @@ optional<vector<pair<int, int>>> IOHandler::readPageFromFile(const string filena
     // Read the page into the aligned buffer and handle error accordingly
     int bytesRead = pread(fd, buffer, PAGE_SIZE, pageMemoryAddress);
     int pairsRead = bytesRead / PAIR_SIZE;
-    cout << "Read " << bytesRead << " bytes from file " << filename << endl;
     if (bytesRead <= 0)
     {
         free(buffer);
@@ -215,6 +213,7 @@ size_t getFileSize(const string &filename)
 {
     struct stat stat_buf;
     int rc = stat(filename.c_str(), &stat_buf);
+    cout << "File size: " << stat_buf.st_size << endl;
     return rc == 0 ? stat_buf.st_size : 0;
 }
 

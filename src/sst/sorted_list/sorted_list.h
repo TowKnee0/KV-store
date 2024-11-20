@@ -29,7 +29,9 @@ public:
     int write(const vector<pair<int, int>> &data);
     optional<int> get(int key); // Search the corresponding value for this key.
 
-    virtual vector<int> getKeyData(int key);
+    vector<int> getKeyData(int key);
+    int getNumDataPages();
+    string getFilename();
 };
 
 #endif

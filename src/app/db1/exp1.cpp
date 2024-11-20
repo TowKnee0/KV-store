@@ -4,33 +4,38 @@
 
 using namespace chrono;
 
-
-int count_put(const unique_ptr<Db>& db, seconds s) {
+int count_put(const unique_ptr<Db> &db, seconds s)
+{
     auto stop = high_resolution_clock::now() + s;
     int count = 0;
-    while (high_resolution_clock::now() < stop) {
+    while (high_resolution_clock::now() < stop)
+    {
         db->put(rand(), rand());
         count++;
     }
     return count;
-} 
+}
 
-int count_get(const unique_ptr<Db>& db, seconds s) {
+int count_get(const unique_ptr<Db> &db, seconds s)
+{
     auto stop = high_resolution_clock::now() + s;
     int count = 0;
-    while (high_resolution_clock::now() < stop) {
+    while (high_resolution_clock::now() < stop)
+    {
         db->get(rand()); // latency so doesnt matter if its actually in there or not
         count++;
     }
     return count;
 }
 
-int count_scan(const unique_ptr<Db>& db, seconds s) {
+int count_scan(const unique_ptr<Db> &db, seconds s)
+{
     int a, b, high, low;
 
     auto stop = high_resolution_clock::now() + s;
     int count = 0;
-    while (high_resolution_clock::now() < stop) {
+    while (high_resolution_clock::now() < stop)
+    {
         a = rand();
         b = rand();
         low = min(a, b);
@@ -42,19 +47,21 @@ int count_scan(const unique_ptr<Db>& db, seconds s) {
 }
 
 // TODO: should take in argc and argv to configure memtable size and number of loops
-int main() {
+int main()
+{
     const int entry_size = 16;
-    const int memtable_size = 1048576/entry_size ; // 5mb
-    const int benchmark_interval = 10485760; // 1mb intervals
+    const int memtable_size = 1048576 / entry_size; // 5mb
+    const int benchmark_interval = 10485760;        // 1mb intervals
     const int entries_per_interval = benchmark_interval / entry_size;
     const int max_size = 10485760; // 50mb
     const seconds duration(2);
     const int duration_int = static_cast<int>(duration.count());
 
-    unique_ptr<Db> db =  make_unique<Db1>(memtable_size);
+    unique_ptr<Db> db = make_unique<Db1>(memtable_size);
     db->open("exp1");
 
-    for (int i = 0; i < max_size / benchmark_interval; i++) {
+    for (int i = 0; i < max_size / benchmark_interval; i++)
+    {
         int num_put = count_put(db, duration);
         int num_get = count_get(db, duration);
         int num_scan = count_scan(db, duration);

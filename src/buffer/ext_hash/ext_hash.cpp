@@ -19,7 +19,6 @@ xxh::hash_t<32> ExtHash::getHash(const string filename, int pageNumber)
 
 uint32_t ExtHash::GetIndexFromHashAndBitSize(xxh::hash_t<32> hash, int bit_size)
 {
-    cout << "bit size is " << bit_size << endl;
     return hash & ((1 << bit_size) - 1);
 }
 /**
@@ -57,14 +56,11 @@ shared_ptr<frame> ExtHash::createFrame(const string filename, int pageNumber, ve
  */
 int ExtHash::bitSizeForNumberOfPages(int numberOfPages, int frame_size)
 {
-    cout << "Number of pages is " << numberOfPages << endl;
-    cout << "Frame size is " << frame_size << endl;
     if (numberOfPages == 0)
     {
         return 1;
     }
     int bit_size = ceil(log2(ceil(static_cast<double>(numberOfPages) / frame_size)));
-    cout << "Bit size is " << bit_size << endl;
     // Edge case, we always need 1 bit.
     if (bit_size == 0)
     {
@@ -277,9 +273,7 @@ void ExtHash::updateMaximumSizeInPages(int newMaximumSizeInPages)
 void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, int>> data, bool dirty)
 {
     // If its already in the table, update the data and return.
-    cout << "getting page in put page" << endl;
     optional<vector<pair<int, int>>> page = this->getPage(filename, pageNumber, false);
-    cout << "got page in put page" << endl;
     if (page.has_value())
     {
         // Nothing to be done
@@ -304,26 +298,19 @@ void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, in
         return;
     }
 
-    cout << "1" << endl;
     shared_ptr<frame> new_frame = createFrame(filename, pageNumber, data, dirty);
-    cout << "2" << endl;
 
     uint32_t index = GetIndexFromHashAndBitSize(new_frame->hash, this->directory_bit_size);
-    cout << "3" << endl;
 
     this->evict();
-    cout << "4" << endl;
 
     insertFrame(new_frame, index, true);
-    cout << "5" << endl;
 
     this->clock[this->curr_hand] = new_frame;
     this->curr_hand = (this->curr_hand + 1) % clock.size();
-    cout << "6" << endl;
 
     this->item_count++;
     this->checkAndExpand();
-    cout << "7" << endl;
 }
 
 /**
@@ -333,7 +320,6 @@ void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, in
  */
 bool ExtHash::canExpand()
 {
-    cout << "current size: " << this->currentSizeInPages << " max size: " << this->maximumSizeInPages << endl;
     return this->currentSizeInPages * 2 <= this->maximumSizeInPages;
 }
 
@@ -345,12 +331,9 @@ void ExtHash::checkAndExpand()
 {
 
     double factor = (this->currentSizeInPages * this->expand_factor);
-    cout << "before if " << endl;
     if (this->item_count >= factor && this->canExpand())
     {
-        cout << "in in" << endl;
         this->expandDirectory();
-        cout << "done expanding" << endl;
     }
 }
 
@@ -366,12 +349,10 @@ void ExtHash::expandDirectory()
 
     // Each frame the the directory gets doubled (ie 10 and 00 need to point at the same frame)
     int prev_size = this->directory.size();
-    cout << "prev size: " << prev_size << endl;
     for (int i = 0; i < prev_size; i++)
     {
         this->directory.push_back(this->directory[i]);
     }
-    cout << "done" << endl;
 }
 
 /**
@@ -451,7 +432,6 @@ optional<vector<pair<int, int>>> ExtHash::getPage(const string filename, int pag
         if (current_frame->hash == hash)
         {
             current_frame->recently_used = true;
-            cout << "Returning from buffer" << endl;
             return current_frame->data;
         }
         current_frame = current_frame->next;
@@ -461,18 +441,13 @@ optional<vector<pair<int, int>>> ExtHash::getPage(const string filename, int pag
         return nullopt;
     }
 
-    cout << "Returning from storage" << endl;
     // If we reach here, the page is not in the hash table. Try and read it from the file.
     optional<vector<pair<int, int>>> page = this->io_handler->readPageFromFile(filename, pageNumber);
-    cout << "done getting from storage" << endl;
-
-    cout << "total pages in file: " << this->io_handler->numPagesInFile(filename) << endl;
 
     if (page.has_value())
     {
         this->putPage(filename, pageNumber, page.value());
 
-        cout << "done putting page" << endl;
         return page;
     }
 

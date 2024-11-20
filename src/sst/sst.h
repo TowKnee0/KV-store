@@ -18,6 +18,7 @@ class Sst
 public:
     virtual int write(const vector<pair<int, int>> &data) = 0;
     virtual optional<int> get(int key) = 0; // Search the corresponding value for this key.
+    virtual string getFilename() = 0;
 
     /**
      * @brief Get the index, page, key and value of the key in the BTree.
@@ -28,6 +29,7 @@ public:
      * @return {int, int, int, int} The index, page, key and value of the key in the BTree.
      */
     virtual vector<int> getKeyData(int key) = 0;
+    virtual int getNumDataPages() = 0;
 
     virtual ~Sst() = default;
 };

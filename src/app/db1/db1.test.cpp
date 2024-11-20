@@ -43,6 +43,8 @@ public:
     MOCK_METHOD(int, write, ((const vector<pair<int, int>>)&data));
     MOCK_METHOD((optional<int>), get, (int key));
     MOCK_METHOD((vector<int>), getKeyData, (int key));
+    MOCK_METHOD(string, getFilename, ());
+    MOCK_METHOD(int, getNumDataPages, ());
 };
 
 // Test getting when the data is in the Memtable
@@ -121,70 +123,67 @@ TEST(Db1Test, GetFromThirdSST)
     EXPECT_EQ(result.value(), value.value());
 }
 
-// TODO: REMAKE AFTER NEW SCAN IMPLEMENTED
-// // Add a test for the scan method
-// TEST(Db1Test, Scan)
-// {
-//     // Create a mock Memtable
-//     unique_ptr<MockMemtable> mockMemtable = make_unique<MockMemtable>();
+TEST(Db1Test, Scan)
+{
+    // Create a mock Memtable
+    unique_ptr<MockMemtable> mockMemtable = make_unique<MockMemtable>();
 
-//     // Create a mock IO
-//     shared_ptr<MockIO> mockIO = make_shared<MockIO>();
+    // Create a mock IO
+    shared_ptr<MockIO> mockIO = make_shared<MockIO>();
 
-//     // Create a Db1 instance
-//     Db1 db1(10);
+    // Create mock IOs calls for the SSTs
+    vector<pair<int, int>> mock_data1_1 = {{1, 2}, {2, 3}, {3, 4}, {5, 6}, {31, 21}};
+    EXPECT_CALL(*mockIO, readPageFromFile("filename0", 1)).Times(1).WillOnce(Return(mock_data1_1));
 
-//     // Set the io_handler to the mock
-//     db1.io_handler = mockIO;
+    vector<pair<int, int>> mock_data2_1 = {{4, 5}, {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}};
+    vector<pair<int, int>> mock_data2_2 = {{11, 12}, {15, 16}};
+    EXPECT_CALL(*mockIO, readPageFromFile("filename1", 1)).Times(1).WillOnce(Return(mock_data2_1));
+    EXPECT_CALL(*mockIO, readPageFromFile("filename1", 2)).Times(1).WillOnce(Return(mock_data2_2));
 
-//     // Set the key range
-//     int key1 = 1;
-//     int key2 = 10;
+    vector<pair<int, int>> mock_data3_1 = {{13, 14}, {17, 18}, {19, 20}, {21, 22}};
+    vector<pair<int, int>> mock_data3_2 = {{23, 24}, {25, 26}, {27, 28}};
+    EXPECT_CALL(*mockIO, readPageFromFile("filename2", 1)).Times(1).WillOnce(Return(mock_data3_1));
+    EXPECT_CALL(*mockIO, readPageFromFile("filename2", 2)).Times(1).WillOnce(Return(mock_data3_2));
 
-//     // Expect the scan method to be called once, returning the value
-//     EXPECT_CALL(*mockMemtable, scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{1, 2}, {2, 3}}));
+    unique_ptr<MockSST> mockSST1 = make_unique<MockSST>();
+    unique_ptr<MockSST> mockSST2 = make_unique<MockSST>();
+    unique_ptr<MockSST> mockSST3 = make_unique<MockSST>();
 
-//     db1.memtable = move(mockMemtable);
+    EXPECT_CALL(*mockSST1, getFilename()).WillRepeatedly(Return("filename0"));
+    EXPECT_CALL(*mockSST1, getNumDataPages()).WillRepeatedly(Return(1));
+    EXPECT_CALL(*mockSST2, getFilename()).WillRepeatedly(Return("filename1"));
+    EXPECT_CALL(*mockSST2, getNumDataPages()).WillRepeatedly(Return(2));
 
-//     // Create mock SSTs
-//     vector<unique_ptr<MockSST>> mockSSTs;
-//     for (int i = 0; i < 3; ++i)
-//     {
-//         mockSSTs.push_back(make_unique<MockSST>());
-//     }
+    EXPECT_CALL(*mockSST3, getFilename()).WillRepeatedly(Return("filename2"));
+    EXPECT_CALL(*mockSST3, getNumDataPages()).WillRepeatedly(Return(2));
 
-//     // Fill mock ssts
-//     EXPECT_CALL(*mockSSTs[2], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{6, 7}, {7, 8}, {9, 10}}));
-//     EXPECT_CALL(*mockSSTs[1], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{5, 10}, {8, 11}, {10, 12}}));
-//     EXPECT_CALL(*mockSSTs[0], scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{3, 4}, {4, 5}}));
+    EXPECT_CALL(*mockSST1, getKeyData(2)).WillRepeatedly(Return(vector<int>{1, 1, 2, 3}));
+    EXPECT_CALL(*mockSST2, getKeyData(2)).WillRepeatedly(Return(vector<int>{0, 1, 4, 5}));
+    EXPECT_CALL(*mockSST3, getKeyData(2)).WillRepeatedly(Return(vector<int>{0, 1, 13, 14}));
 
-//     // Move the mock SSTs into the db1 instance
-//     for (auto &mockSST : mockSSTs)
-//     {
-//         db1.sst.push_back(move(mockSST));
-//     }
+    // Create a Db1 instance
+    Db1 db1(10);
 
-//     // Call the scan method
-//     vector<pair<int, int>> result = db1.scan(key1, key2);
-//     EXPECT_EQ(result.size(), 10);
-//     EXPECT_EQ(result[0].first, 1);
-//     EXPECT_EQ(result[0].second, 2);
-//     EXPECT_EQ(result[1].first, 2);
-//     EXPECT_EQ(result[1].second, 3);
-//     EXPECT_EQ(result[2].first, 3);
-//     EXPECT_EQ(result[2].second, 4);
-//     EXPECT_EQ(result[3].first, 4);
-//     EXPECT_EQ(result[3].second, 5);
-//     EXPECT_EQ(result[4].first, 5);
-//     EXPECT_EQ(result[4].second, 10);
-//     EXPECT_EQ(result[5].first, 6);
-//     EXPECT_EQ(result[5].second, 7);
-//     EXPECT_EQ(result[6].first, 7);
-//     EXPECT_EQ(result[6].second, 8);
-//     EXPECT_EQ(result[7].first, 8);
-//     EXPECT_EQ(result[7].second, 11);
-//     EXPECT_EQ(result[8].first, 9);
-//     EXPECT_EQ(result[8].second, 10);
-//     EXPECT_EQ(result[9].first, 10);
-//     EXPECT_EQ(result[9].second, 12);
-// }
+    // Set the io_handler to the mock
+    db1.io_handler = mockIO;
+
+    // Move the mock SSTs into the db1 instance
+
+    db1.sst.push_back(move(mockSST1));
+    db1.sst.push_back(move(mockSST2));
+    db1.sst.push_back(move(mockSST3));
+
+    // Set the key range
+    int key1 = 2;
+    int key2 = 30;
+
+    // Expect the scan method to be called once, returning the value
+    EXPECT_CALL(*mockMemtable, scan(key1, key2)).Times(1).WillOnce(Return(vector<pair<int, int>>{{14, 15}, {40, 41}}));
+
+    db1.memtable = move(mockMemtable);
+
+    // Call the scan method
+    vector<pair<int, int>> result = db1.scan(key1, key2);
+    vector<pair<int, int>> expected_result = {{2, 3}, {3, 4}, {4, 5}, {5, 6}, {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 12}, {13, 14}, {14, 15}, {15, 16}, {17, 18}, {19, 20}, {21, 22}, {23, 24}, {25, 26}, {27, 28}};
+    EXPECT_EQ(result, expected_result);
+}

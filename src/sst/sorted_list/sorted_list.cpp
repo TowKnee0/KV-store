@@ -35,6 +35,8 @@ optional<int> SortedList::get(int key)
   return nullopt;
 }
 
+string SortedList::getFilename() { return this->filename; }
+
 // Finds a page which contains the key, or the next largest value than the key.
 // Returns the page, and the page number if found, or nullopt if not found.
 optional<pair<vector<pair<int, int>>, int>>
@@ -146,5 +148,10 @@ vector<int> SortedList::getKeyData(int key)
     return {-1, -1, -1, -1};
   }
   pair<int, int> key_value = result.value().first;
-  return {page_and_num.value().second, result.value().second, key_value.first, key_value.second};
+  return {result.value().second, page_and_num.value().second, key_value.first, key_value.second};
+}
+
+int SortedList::getNumDataPages()
+{
+  return this->io_handler->numPagesInFile(this->filename);
 }

@@ -31,7 +31,6 @@ void Db1::open(string name)
 
 void Db1::write_memtable()
 {
-    cout << "writing memtable" << endl;
     vector<pair<int, int>> data = memtable->inOrder();
 
     num_sst++;
@@ -75,6 +74,88 @@ optional<int> Db1::get(int key)
 
 vector<pair<int, int>> Db1::scan(int key1, int key2)
 {
+
+    vector<vector<pair<int, int>>> SST_to_PAGE(sst.size() + 1);
+    vector<int> SST_to_PAGE_index(sst.size() + 1);
+    vector<int> SST_to_PAGE_NUM(sst.size() + 1);
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> min_heap;
+
+    for (int i = 0; i < sst.size(); i++)
+    {
+        vector<int> key_data = sst[i]->getKeyData(key1);
+        int index = key_data[0];
+        int page = key_data[1];
+        int key = key_data[2];
+        int value = key_data[3];
+
+        if (page != -1)
+        {
+            SST_to_PAGE[i] = io_handler->readPageFromFile(sst[i]->getFilename(), page).value();
+            SST_to_PAGE_index[i] = index;
+            min_heap.push({key, i});
+            SST_to_PAGE_NUM[i] = page;
+        }
+        if (page == -1)
+        {
+            SST_to_PAGE[i] = {};
+            SST_to_PAGE_index[i] = -1;
+            SST_to_PAGE_NUM[i] = -1;
+        }
+    }
+
+    // Last entry in the vector is special since it doesnt store pages,
+    // but instead stores the memtable entries
+    vector<pair<int, int>> memtable_entries = memtable->scan(key1, key2);
+    SST_to_PAGE[sst.size()] = memtable_entries;
+    SST_to_PAGE_index[sst.size()] = 0;
+    min_heap.push({memtable_entries[0].first, sst.size()});
+
+    vector<pair<int, int>> combined;
+
+    while (!min_heap.empty())
+    {
+        pair<int, int> top_item = min_heap.top();
+        int popped_key = top_item.first;
+        int popped_i = top_item.second;
+        min_heap.pop();
+
+        combined.push_back({popped_key, SST_to_PAGE[popped_i][SST_to_PAGE_index[popped_i]].second});
+        SST_to_PAGE_index[popped_i]++;
+
+        if (SST_to_PAGE_index[popped_i] < SST_to_PAGE[popped_i].size())
+        {
+            // if next key within range
+            if (SST_to_PAGE[popped_i][SST_to_PAGE_index[popped_i]].first > key2)
+            {
+                continue;
+            }
+            min_heap.push({SST_to_PAGE[popped_i][SST_to_PAGE_index[popped_i]].first, popped_i});
+        }
+        else // load next page
+        {
+            if (popped_i == SST_to_PAGE.size() - 1)
+            {
+                continue; // memtable, no more pages.
+            }
+
+            if (sst[popped_i]->getNumDataPages() < SST_to_PAGE_NUM[popped_i] + 1)
+            {
+                SST_to_PAGE[popped_i] = {};
+                SST_to_PAGE_index[popped_i] = -1;
+                SST_to_PAGE_NUM[popped_i] = -1;
+                continue;
+            }
+
+            SST_to_PAGE[popped_i] = io_handler->readPageFromFile(sst[popped_i]->getFilename(), SST_to_PAGE_NUM[popped_i] + 1).value();
+            SST_to_PAGE_index[popped_i] = 0;
+            SST_to_PAGE_NUM[popped_i]++;
+            if (SST_to_PAGE[popped_i].size() != 0 && SST_to_PAGE[popped_i][SST_to_PAGE_index[popped_i]].first <= key2)
+            {
+                min_heap.push({SST_to_PAGE[popped_i][SST_to_PAGE_index[popped_i]].first, popped_i});
+            }
+        }
+    }
+    return combined;
 
     // // Scan the memtable first
     // vector<pair<int, int>> memtable_entries = memtable->scan(key1, key2);

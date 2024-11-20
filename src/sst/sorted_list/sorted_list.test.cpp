@@ -91,43 +91,43 @@ TEST(SstTest, GetTestLarge)
 
     // Test the getKeyData method
     vector<int> keyData = sortedList.getKeyData(15);
-    EXPECT_EQ(keyData[0], 3);  // Page number
-    EXPECT_EQ(keyData[1], 1);  // index in page
+    EXPECT_EQ(keyData[0], 1);  // index in page
+    EXPECT_EQ(keyData[1], 3);  // Page number
     EXPECT_EQ(keyData[2], 15); // key
     EXPECT_EQ(keyData[3], 16); // value
 
     // test not in the list at the beginning
     keyData = sortedList.getKeyData(0);
-    EXPECT_EQ(keyData[0], 1); // Page number
-    EXPECT_EQ(keyData[1], 0); // index in page
+    EXPECT_EQ(keyData[0], 0); // index in page
+    EXPECT_EQ(keyData[1], 1); // Page number
     EXPECT_EQ(keyData[2], 1); // key
     EXPECT_EQ(keyData[3], 2); // value
 
     // test not in the list in the middle
     keyData = sortedList.getKeyData(8);
-    EXPECT_EQ(keyData[0], 2);  // Page number
-    EXPECT_EQ(keyData[1], 1);  // index in page
+    EXPECT_EQ(keyData[0], 1);  // index in page
+    EXPECT_EQ(keyData[1], 2);  // Page number
     EXPECT_EQ(keyData[2], 9);  // key
     EXPECT_EQ(keyData[3], 10); // value
 
     // test not in the list at the end
     keyData = sortedList.getKeyData(24);
-    EXPECT_EQ(keyData[0], -1); // Page number
-    EXPECT_EQ(keyData[1], -1); // index in page
+    EXPECT_EQ(keyData[0], -1); // index in page
+    EXPECT_EQ(keyData[1], -1); // Page number
     EXPECT_EQ(keyData[2], -1); // key
     EXPECT_EQ(keyData[3], -1); // value
 
     // test exactly at the end
     keyData = sortedList.getKeyData(23);
-    EXPECT_EQ(keyData[0], 4);  // Page number
-    EXPECT_EQ(keyData[1], 2);  // index in page
+    EXPECT_EQ(keyData[0], 2);  // index in page
+    EXPECT_EQ(keyData[1], 4);  // Page number
     EXPECT_EQ(keyData[2], 23); // key
     EXPECT_EQ(keyData[3], 24); // value
 
     // test exactly at the start
     keyData = sortedList.getKeyData(1);
-    EXPECT_EQ(keyData[0], 1); // Page number
-    EXPECT_EQ(keyData[1], 0); // index in page
+    EXPECT_EQ(keyData[0], 0); // index in page
+    EXPECT_EQ(keyData[1], 1); // Page number
     EXPECT_EQ(keyData[2], 1); // key
     EXPECT_EQ(keyData[3], 2); // value
 }
