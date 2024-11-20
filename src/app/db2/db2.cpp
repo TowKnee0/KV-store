@@ -40,15 +40,26 @@ void Db2::write_memtable()
 {
     cout << "writing memtable" << endl;
     vector<pair<int, int>> data = memtable->inOrder();
+    cout  << "1" << endl;
 
-    num_sst++;
+
     unique_ptr<BTree> s = make_unique<BTree>(to_string(num_sst), name, io_handler, buffer);
+    cout  << "2" << endl;
+
 
     if (s->write(data) == EXIT_FAILURE){
         throw runtime_error("memtable write failed");
     };
+
+    cout  << "3" << endl;
+
     sst.push_back(move(s));
+    num_sst++;
+    cout  << "4" << endl;
+
+
     memtable->clear();
+    cout << "finished writing memtable" << endl;
 }
 
 void Db2::put(int key, int value)

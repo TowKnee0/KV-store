@@ -56,6 +56,9 @@ shared_ptr<frame> ExtHash::createFrame(const string filename, int pageNumber, ve
  */
 int ExtHash::bitSizeForNumberOfPages(int numberOfPages, int frame_size)
 {
+    if (numberOfPages == 0) {
+        return 1;
+    }
     int bit_size = ceil(log2(ceil(numberOfPages / frame_size)));
     // Edge case, we always need 1 bit.
     if (bit_size == 0)
