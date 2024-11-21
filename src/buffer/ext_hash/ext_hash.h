@@ -67,7 +67,7 @@ public:
     ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_factor, int frame_size, shared_ptr<IO> io_handler);
     void updateMaximumSizeInPages(int newMaximumSizeInPages);
     void putPage(const string filename, int pageNumber, vector<pair<int, int>> data, bool dirty = false);
-    optional<vector<pair<int, int>>> getPage(const string filename, int pageNumber, bool read_from_storage = true);
+    optional<vector<pair<int, int>>> getPage(const string filename, int pageNumber);
 };
 
 #endif
