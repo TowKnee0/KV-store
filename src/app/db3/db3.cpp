@@ -30,6 +30,7 @@ void Db3::open(string name)
 }
 
 void Db3::put(int key, int val) {
+    cout << "calling lsm put" << endl;
     lsm->put(key, val);
 }
 

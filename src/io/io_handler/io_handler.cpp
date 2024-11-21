@@ -235,6 +235,7 @@ int IOHandler::numPagesInFile(const string filename)
  */
 void IOHandler::del(string filename)
 {
+    cout << "del " << filename << endl;
     int success = remove((constructFilePath() + constructFileName(filename)).c_str());
     if (success != 0)
     {

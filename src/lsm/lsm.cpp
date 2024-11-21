@@ -90,7 +90,8 @@ optional<int> Lsm::get(int key) {
 
 void Lsm::load() {
     int mpages = io->numPagesInFile("memtable");
-    if (mpages != 0) {
+    cout << "pages in memtable " << mpages << endl;
+    if (mpages != -1) {
         for (int p  = 0; p < mpages; p++) {
             optional<vector<pair<int, int>>> data = this->io->readPageFromFile("memtable", p+1);
             if (!data.has_value()) {
@@ -101,9 +102,9 @@ void Lsm::load() {
                 this->memtable->put(pear.first, pear.second);
             }
         }
+        io->del("memtable");
     }
-    io->del("memtable");
-
+    
     vector<string> files = this->io->getDbFilenames();
     for (string file: files) {
         string f = file.substr(0, file.find('.'));

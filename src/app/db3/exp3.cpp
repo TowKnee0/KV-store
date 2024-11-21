@@ -58,6 +58,9 @@ int main()
     const int duration_int = static_cast<int>(duration.count());
 
     unique_ptr<Db> db = make_unique<Db3>(memtable_size, 1, 100, 0.8, 3, 8, false);
+
+    cout << "Open Db" << endl;
+
     db->open("exp3");
 
     for (int i = 0; i < max_size / benchmark_interval; i++)
