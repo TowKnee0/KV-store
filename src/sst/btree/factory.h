@@ -14,7 +14,7 @@ public:
 class DefaultBTreeFactory : public BTreeFactory {
 public:
     shared_ptr<BTree> create(string name, string dbname, shared_ptr<IO> io, shared_ptr<Buffer> buffer, shared_ptr<Filter> filter) {
-        return make_shared<BTree>(name, dbname, io, buffer);
+        return make_shared<BTree>(name, dbname, io, buffer, false, filter);
     }
 };
 
