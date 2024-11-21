@@ -34,6 +34,10 @@ private:
     int overflow_count;
     vector<int> indices_with_overflow;
 
+    vector<int> bucket_counts;
+
+    void checkAndSplitBucket(int index);
+
     vector<shared_ptr<frame>> clock;
     int curr_hand;
 

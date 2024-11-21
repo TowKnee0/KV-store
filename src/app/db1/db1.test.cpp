@@ -187,3 +187,36 @@ TEST(Db1Test, Scan)
     vector<pair<int, int>> expected_result = {{2, 3}, {3, 4}, {4, 5}, {5, 6}, {6, 7}, {7, 8}, {8, 9}, {9, 10}, {10, 11}, {11, 12}, {13, 14}, {14, 15}, {15, 16}, {17, 18}, {19, 20}, {21, 22}, {23, 24}, {25, 26}, {27, 28}};
     EXPECT_EQ(result, expected_result);
 }
+
+TEST(Db1Test, NoMockTests)
+{
+    // Create a Db1 instance
+    Db1 db1(10);
+    db1.open("no_mock_test");
+
+    for (string filename : db1.io_handler->getDbFilenames())
+    {
+        db1.io_handler->del(filename);
+    }
+
+
+    // for (int i = 0; i < 1000; i++)
+    // {
+    //     db1.put(i, i + 1);
+    // }
+
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     optional<int> result = db1.get(i);
+    //     EXPECT_EQ(result.value(), i + 1);
+    // }
+
+    // // scan for 5 - 9
+    // vector<pair<int, int>> result = db1.scan(5, 9);
+    // vector<pair<int, int>> expected_result = {{5, 6}, {6, 7}, {7, 8}, {8, 9}, {9, 10}};
+    // EXPECT_EQ(result, expected_result);
+
+    // db1.close();
+   
+    
+}
