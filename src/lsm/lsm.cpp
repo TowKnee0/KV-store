@@ -16,18 +16,36 @@ Lsm::Lsm(string dbname, shared_ptr<Buffer> buffer, shared_ptr<Memtable> memtable
 }
 
 void Lsm::put(int key, int value) {
+
     if (this->memtable->put(key, value) == EXIT_SUCCESS) {
         return;
     }
+    cout << "memtable full in lsm" <<  endl;
+
 
     vector<pair<int, int>> data = this->memtable->inOrder();
+    cout << "inorder" <<  endl;
+
+
     this->memtable->clear();
+
+    cout << "clear" <<  endl;
+
     this->memtable->put(key, value);
 
+    cout << "put" <<  endl;
+
     shared_ptr<BTree> temp = this->factory->create("temp", this->dbname, this->io, this->buffer, make_shared<BloomFilter>(this->filter_size_in_bits));
+    
+    cout << "create" <<  endl;
+
     temp->write(data);
 
+    cout << "lsm write data" << endl;
+
     for (int i = 0; i < this->trees.size(); i++) {
+        cout << "lsm loop: " << i <<  endl;
+
         shared_ptr<BTree> tree = this->trees[i];
         int clevel = i + 1;
         // empty level
@@ -37,6 +55,8 @@ void Lsm::put(int key, int value) {
             }
 
             temp->rename(this->level_prefix + to_string(clevel));
+            cout << "rename temp" <<  endl;
+
             this->trees[clevel-1] = temp;
             return;
         }
@@ -47,7 +67,11 @@ void Lsm::put(int key, int value) {
 
         int tlevel = stoi(tree->filename.substr(this->level_prefix.length()));
         shared_ptr<BTree> merged = this->factory->create("merged", this->dbname, this->io, this->buffer, make_shared<BloomFilter>(this->filter_size_in_bits));
+        cout << "before merge" <<  endl;
+
         merged->mergeBTrees(tree->filename, temp->filename);
+        cout << "after merge" <<  endl;
+
         
         io->del(temp->filename);
         io->del(tree->filename);
@@ -156,6 +180,7 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
 
     while (!pq.empty()) {
         auto [key, recency, idx] = pq.top();
+        cout << "Key: " << key << " recency: " << recency << " idx: " << idx << endl;
         pq.pop();
         
         if (key > end) {
