@@ -146,6 +146,9 @@ void Lsm::load() {
 }
 
 vector<pair<int, int>> Lsm::scan(int start, int end) {
+
+    cout << "lsm scan" << this->trees.size() << endl;
+
     vector<vector<pair<int, int>>> pages(this->trees.size() + 1);
     vector<int> curr_page(this->trees.size() + 1);
     vector<int> read_indexes(this->trees.size() + 1);
@@ -174,7 +177,7 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
             pages[i+1] = page.value();
             curr_page[i+1] = temp[1];
             read_indexes[i+1] = temp[0];
-            pq.push({temp[2], i+1, temp[0]});
+            pq.push({temp[2], i+1, i+1});
         }
     }
 

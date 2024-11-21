@@ -10,7 +10,7 @@ int count_put(const unique_ptr<Db> &db, seconds s)
     int count = 0;
     while (high_resolution_clock::now() < stop)
     {
-        cout << count << endl;
+        // cout << count << endl;
         db->put(rand(), rand());
         count++;
     }
