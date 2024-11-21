@@ -88,14 +88,14 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
         int key = key_data[2];
         int value = key_data[3];
 
-        if (page != -1)
+        if (page != -1 && key <= key2)
         {
             SST_to_PAGE[i] = io_handler->readPageFromFile(sst[i]->getFilename(), page).value();
             SST_to_PAGE_index[i] = index;
             min_heap.push({key, i});
             SST_to_PAGE_NUM[i] = page;
         }
-        if (page == -1)
+        else 
         {
             SST_to_PAGE[i] = {};
             SST_to_PAGE_index[i] = -1;
