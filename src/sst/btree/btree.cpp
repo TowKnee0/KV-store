@@ -184,11 +184,10 @@ int BTree::write(const vector<pair<int, int>> &data)
 
 void incrementPointersAndData(int &page_pointer, int &page,
                               vector<pair<int, int>> &data,
-                              shared_ptr<Buffer> buffer, string filename,
-                              int B)
+                              shared_ptr<Buffer> buffer, string filename)
 {
   page_pointer++;
-  if (page_pointer == B)
+  if (page_pointer == data.size())
   {
     page++;
     page_pointer = 0;
@@ -279,7 +278,7 @@ int BTree::mergeBTrees(string filename1, string filename2)
   // --- Merging ---
 
   while (tree1_page <= num_leaf_pages_tree1 &&
-         tree1_page <= num_leaf_pages_tree2)
+         tree2_page <= num_leaf_pages_tree2)
   {
     if (tree1_data[tree1_page_pointer].first == this->INF)
     {
@@ -300,7 +299,7 @@ int BTree::mergeBTrees(string filename1, string filename2)
     {
       addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, this->filter, new_num_data);
       incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
-                               this->buffer, filename1, this->B);
+                               this->buffer, filename1);
     }
     else
     {
@@ -308,11 +307,11 @@ int BTree::mergeBTrees(string filename1, string filename2)
                       tree2_data[tree2_page_pointer].first;
       addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, this->filter, new_num_data);
       incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
-                               this->buffer, filename2, this->B);
+                               this->buffer, filename2);
       if (same_key)
       {
         incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
-                                 this->buffer, filename1, this->B);
+                                 this->buffer, filename1);
       }
     }
     checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
@@ -329,20 +328,21 @@ int BTree::mergeBTrees(string filename1, string filename2)
     }
     addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, this->filter, new_num_data);
     incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
-                             this->buffer, filename1, this->B);
+                             this->buffer, filename1);
     checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
                             this->filename, this->io_handler);
   }
 
   while (tree2_page <= num_leaf_pages_tree2)
   {
+    cout << tree2_data.size() << " " << tree2_page_pointer << endl;
     if (tree2_data[tree2_page_pointer].first == this->INF)
     {
       break; // No more useful data.
     }
     addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, this->filter, new_num_data);
     incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
-                             this->buffer, filename2, this->B);
+                             this->buffer, filename2);
     checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
                             this->filename, this->io_handler);
   }
@@ -490,7 +490,10 @@ pair<int, pair<int, int>> BTree::findKeyInPage(int key, int page_location)
     throw runtime_error(error_message);
   }
   vector<pair<int, int>> data = page.value();
-  for (int i = 0; i < this->B; i++)
+  // We dont iterate over B because for all non-leaf nodes, 
+  // the size should be B, and the leaf nodes may contain less than B elements
+  // (at the last page).
+  for (int i = 0; i < data.size(); i++)
   {
     if (key <= data[i].first)
     {
@@ -568,6 +571,7 @@ vector<int> BTree::getKeyData(int key)
  */
 optional<int> BTree::btreeGet(int key)
 {
+  cout << "trying to get key: " << key << endl;
   vector<int> key_data = getKeyData(key);
   if (key_data[2] != key)
   {
