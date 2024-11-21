@@ -140,7 +140,6 @@ vector<pair<int, int>> BTree::constructMetadata()
 int BTree::write(const vector<pair<int, int>> &data)
 {
   // Write leafs
-  cout << "0" << endl;
   if (io_handler->writeToFile(filename, data) == -1)
   {
     return EXIT_FAILURE;
@@ -161,7 +160,6 @@ int BTree::write(const vector<pair<int, int>> &data)
            this->B); // io_handler->numPagesInFile(filename);
   this->num_data = data.size();
   this->height = computeHeight(this->num_data, this->B);
-  cout << "1" << endl;
   if (io_handler->writeToFile(this->filename, this->contructInternalNodes(),
                               this->num_leaf_pages + 1) == -1)
   {
@@ -172,7 +170,6 @@ int BTree::write(const vector<pair<int, int>> &data)
       ceil(static_cast<double>(
                layerStartingIndex(this->height, data.size(), this->B)) /
            this->B); // io_handler->numPagesInFile(this->filename);
-  cout << "3" << endl;
   if (io_handler->writeToFile(this->filename, this->constructMetadata(),
                               total_pages_without_metadata + 1) == -1)
   {
@@ -335,7 +332,6 @@ int BTree::mergeBTrees(string filename1, string filename2)
 
   while (tree2_page <= num_leaf_pages_tree2)
   {
-    cout << tree2_data.size() << " " << tree2_page_pointer << endl;
     if (tree2_data[tree2_page_pointer].first == this->INF)
     {
       break; // No more useful data.
@@ -395,13 +391,7 @@ vector<pair<int, int>> BTree::contructInternalNodes()
       layerStartingIndex(this->height, this->num_data, this->B);
 
 
-  cout << "height is " << this->height << endl;
-  cout << "num data is " << this->num_data << endl;
-  cout << "B is " << this->B << endl;
-  cout << "total btree size is " << total_btree_size << endl;
   int internal_btree_size = total_btree_size - (this->num_leaf_pages * this->B);
-  cout << "internal btree size is " << internal_btree_size << endl;
-  cout << "num leaf pages is " << this->num_leaf_pages << endl;
   vector<pair<int, int>> internal_nodes(internal_btree_size,
                                         {this->INF, this->INF});
 
@@ -448,10 +438,8 @@ vector<pair<int, int>> BTree::contructInternalNodes()
       }
 
       int child_page_number = right_child_page + 1; // add 1 because 1 indexed.
-      cout << "getting page in construct" << child_page_number << endl;
       optional<vector<pair<int, int>>> leaf_page =
           this->buffer->getPage(this->filename, child_page_number);
-      cout << "got page " << child_page_number << endl;
       if (!leaf_page.has_value())
       {
         string error_message = "expecting leaf page to be present at " +
@@ -571,7 +559,6 @@ vector<int> BTree::getKeyData(int key)
  */
 optional<int> BTree::btreeGet(int key)
 {
-  cout << "trying to get key: " << key << endl;
   vector<int> key_data = getKeyData(key);
   if (key_data[2] != key)
   {
