@@ -213,7 +213,6 @@ size_t getFileSize(const string &filename)
 {
     struct stat stat_buf;
     int rc = stat(filename.c_str(), &stat_buf);
-    cout << "File size: " << stat_buf.st_size << endl;
     return rc == 0 ? stat_buf.st_size : 0;
 }
 

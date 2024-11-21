@@ -106,9 +106,18 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
     // Last entry in the vector is special since it doesnt store pages,
     // but instead stores the memtable entries
     vector<pair<int, int>> memtable_entries = memtable->scan(key1, key2);
-    SST_to_PAGE[sst.size()] = memtable_entries;
-    SST_to_PAGE_index[sst.size()] = 0;
-    min_heap.push({memtable_entries[0].first, sst.size()});
+    if (memtable_entries.size() != 0)
+    {
+        SST_to_PAGE[sst.size()] = memtable_entries;
+        SST_to_PAGE_index[sst.size()] = 0;
+        min_heap.push({memtable_entries[0].first, sst.size()});
+    }
+    else
+    {
+        SST_to_PAGE[sst.size()] = {};
+        SST_to_PAGE_index[sst.size()] = -1;
+        SST_to_PAGE_NUM[sst.size()] = -1;
+    }
 
     vector<pair<int, int>> combined;
 

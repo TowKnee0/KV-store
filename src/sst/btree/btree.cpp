@@ -74,7 +74,6 @@ int layerStartingIndex(int layer, int num_keys, int B)
 void BTree::loadMetadata()
 {
   int num_pages = this->io_handler->numPagesInFile(this->filename);
-  cout << "Num pages: " << num_pages << endl;
   if (num_pages == -1)
   {
     return;
@@ -84,10 +83,8 @@ void BTree::loadMetadata()
       this->buffer->getPage(this->filename, num_pages);
   if (!metadata.has_value())
   {
-    cout << "No metadata found" << endl;
     return;
   };
-  cout << "Metadata found" << endl;
   vector<pair<int, int>> metadata_data = metadata.value();
   this->num_data = metadata_data[BTree::B_TREE_NUM_DATA_INDEX].second;
   this->height = metadata_data[BTree::B_TREE_HEIGHT_INDEX].second;

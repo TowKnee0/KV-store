@@ -40,8 +40,6 @@ int count_scan(const unique_ptr<Db> &db, seconds s)
         b = rand();
         low = min(a, b);
         high = max(a, b);
-        low = 10;
-        high = 20;
         db->scan(low, high);
         count++;
     }
@@ -65,11 +63,8 @@ int main()
     for (int i = 0; i < max_size / benchmark_interval; i++)
     {
         int num_put = count_put(db, duration);
-        cout << "done put" << endl;
         int num_get = count_get(db, duration);
-        cout << "done get" << endl;
         int num_scan = count_scan(db, duration);
-        cout << "done scan" << endl;
 
         cout << "Current db size: " << num_put * 16 << "bytes" << endl;
         cout << "num_put/s: " << num_put / duration_int << endl;
