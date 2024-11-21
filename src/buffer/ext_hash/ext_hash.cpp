@@ -15,7 +15,7 @@ using namespace std;
  * @param frame_size The size of each frame in pages.
  */
 ExtHash::ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_factor, int frame_size, shared_ptr<IO> io_handler)
-    : minimumSizeInPages(minimumSizeInPages), maximumSizeInPages(maximumSizeInPages), currentSizeInPages(minimumSizeInPages), expand_factor(expand_factor), frame_size(frame_size), item_count(0), overflow_count(0), io_handler(io_handler)
+    : minimumSizeInPages(minimumSizeInPages), maximumSizeInPages(maximumSizeInPages), expand_factor(expand_factor), frame_size(frame_size), item_count(0), io_handler(io_handler)
 {
 
     // Each frame can store a maximum of frame_size pages.
