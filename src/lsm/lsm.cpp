@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <stdexcept>
 #include <iostream>
+#include <queue>
+#include <tuple>
 
 
 Lsm::Lsm(string dbname, shared_ptr<Buffer> buffer, shared_ptr<Memtable> memtable, shared_ptr<IO> io, shared_ptr<BTreeFactory> factory, int filter_size_in_bits) {
@@ -116,6 +118,71 @@ void Lsm::load() {
         shared_ptr<BTree> tree = this->factory->create(f, this->dbname, this->io, this->buffer, make_shared<BloomFilter>(this->filter_size_in_bits));
         this->trees[tlevel - 1] = tree;
     }
+}
+
+vector<pair<int, int>> Lsm::scan(int start, int end) {
+    vector<vector<pair<int, int>>> pages(this->trees.size() + 1);
+    vector<int> curr_page(this->trees.size() + 1);
+    vector<int> read_indexes(this->trees.size() + 1);
+    // <next read key, recency, index>
+    priority_queue<tuple<int, int, int>, vector<tuple<int, int, int>>, greater<tuple<int, int, int>>> pq; 
+    vector<pair<int,int>> ret;
+    int prev_key = INT_MIN;
+
+    vector<pair<int, int>> table = this->memtable->scan(start, end);
+    if (table.size() != 0) {
+        pq.push({table[0].first, 0, 0});
+    }
+
+    for (int i = 0; i < this->trees.size(); i++) {
+        if (trees[i] == nullptr) {
+            continue;
+        }
+
+        vector<int> temp =  trees[i]->getKeyData(start);
+        if (temp[0] != -1) {
+            optional<vector<pair<int, int>>> page = this->buffer->getPage(trees[i]->getFilename(), temp[1]);
+            if (!page.has_value()) {
+                throw runtime_error("Invalid page returned from GetKeyData");
+            }
+
+            pages[i+1] = page.value();
+            curr_page[i+1] = temp[1];
+            read_indexes[i+1] = temp[0];
+            pq.push({temp[2], i+1, temp[0]});
+        }
+    }
+
+    while (!pq.empty()) {
+        auto [key, recency, idx] = pq.top();
+        pq.pop();
+        
+        if (key > end) {
+            return ret;
+        }
+
+        if (key != prev_key) {
+            ret.push_back(pages[idx][read_indexes[idx]]);
+            prev_key = key;
+        }
+
+        read_indexes[idx]++;
+        // end of page, read next page if possible
+        if (read_indexes[idx] >= pages[idx].size()) {
+            curr_page[idx]++;
+            optional<vector<pair<int, int>>> page = this->buffer->getPage(trees[idx]->getFilename(), curr_page[idx]);
+            if (!page.has_value()) {
+                continue;
+            }
+            pages[idx] = page.value();
+            read_indexes[idx] = 0;
+        }
+
+        if (pages[idx][read_indexes[idx]].first <= end) {
+            pq.push({pages[idx][read_indexes[idx]].first, recency, idx});
+        }
+    }
+    return ret;
 }
 
 void Lsm::save() {

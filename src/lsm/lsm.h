@@ -33,6 +33,7 @@ class Lsm {
         void put(int key, int value);
         optional<int> get(int key);
         void del(int key);
+        vector<pair<int, int>> scan(int start, int end);
         void load();
         void save();
     };
