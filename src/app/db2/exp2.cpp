@@ -58,7 +58,7 @@ int main()
     const int duration_int = static_cast<int>(duration.count());
 
     unique_ptr<Db> db = make_unique<Db2>(memtable_size, 1, 100, 0.8, 3, false);
-    db->open("exp1");
+    db->open("exp2");
 
     for (int i = 0; i < max_size / benchmark_interval; i++)
     {
