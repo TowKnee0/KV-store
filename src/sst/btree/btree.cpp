@@ -196,12 +196,12 @@ void incrementPointersAndData(int &page_pointer, int &page,
 }
 
 void addDataToBuffer(vector<pair<int, int>> &page_buffer,
-                     vector<pair<int, int>> &page, int page_pointer, Filter &filter, int &num_data)
+                     vector<pair<int, int>> &page, int page_pointer, shared_ptr<Filter> filter, int &num_data)
 {
   page_buffer.push_back(page[page_pointer]);
   // Merge should only be used in part 3, and therefore a filter should
   // always be present.
-  filter.addKey(page[page_pointer].first);
+  filter->addKey(page[page_pointer].first);
   num_data++;
 }
 
@@ -297,7 +297,7 @@ int BTree::mergeBTrees(string filename1, string filename2)
     if (tree1_data[tree1_page_pointer].first <
         tree2_data[tree2_page_pointer].first)
     {
-      addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, *this->filter, new_num_data);
+      addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, this->filter, new_num_data);
       incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
                                this->buffer, filename1, this->B);
     }
@@ -305,7 +305,7 @@ int BTree::mergeBTrees(string filename1, string filename2)
     {
       bool same_key = tree1_data[tree1_page_pointer].first ==
                       tree2_data[tree2_page_pointer].first;
-      addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, *this->filter, new_num_data);
+      addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, this->filter, new_num_data);
       incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
                                this->buffer, filename2, this->B);
       if (same_key)
@@ -326,7 +326,7 @@ int BTree::mergeBTrees(string filename1, string filename2)
     {
       break; // No more useful data.
     }
-    addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, *this->filter, new_num_data);
+    addDataToBuffer(page_buffer, tree1_data, tree1_page_pointer, this->filter, new_num_data);
     incrementPointersAndData(tree1_page_pointer, tree1_page, tree1_data,
                              this->buffer, filename1, this->B);
     checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
@@ -339,7 +339,7 @@ int BTree::mergeBTrees(string filename1, string filename2)
     {
       break; // No more useful data.
     }
-    addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, *this->filter, new_num_data);
+    addDataToBuffer(page_buffer, tree2_data, tree2_page_pointer, this->filter, new_num_data);
     incrementPointersAndData(tree2_page_pointer, tree2_page, tree2_data,
                              this->buffer, filename2, this->B);
     checkAndFlushPageBuffer(page_buffer, new_num_leaf_pages, this->B,
