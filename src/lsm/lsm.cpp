@@ -40,12 +40,17 @@ void Lsm::put(int key, int value) {
         int clevel = i + 1;
         // empty level
         if (tree == nullptr) {
+            cout << "tree is null at level " << i+1 << endl;
             if (this->trees[clevel - 1] != nullptr) {
                 throw runtime_error("Attempt to overwrite existing BTree at index: " + to_string(clevel - 1));
             }
 
             temp->rename(this->level_prefix + to_string(clevel));
             this->trees[clevel-1] = temp;
+
+            cout << "finished writing temp" << endl;
+            
+        
             return;
         }
 
@@ -84,12 +89,11 @@ optional<int> Lsm::get(int key) {
         if (tree == nullptr) {
             continue;
         }
-
-        if (int ret = tree->get(key) != nullopt) {
-            if (ret == INT_MIN) {
-                return nullopt;
-            }
-            return ret;
+        optional<int> ret = tree->get(key);
+        if (ret.has_value() && ret.value() == INT_MIN) {
+            return nullopt;
+        } else if (ret.has_value()) {
+            return ret.value();
         }
     }
     return nullopt;
@@ -194,6 +198,10 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
             }
 
             curr_page[idx]++;
+            if (curr_page[idx] > trees[idx - 1]->getNumDataPages()) {
+                continue;
+            }
+
             cout << "getting page. filename: " << trees[idx-1]->getFilename() << ", page_num: " << curr_page[idx] << endl;
             optional<vector<pair<int, int>>> page = this->buffer->getPage(trees[idx-1]->getFilename(), curr_page[idx]);
             if (!page.has_value()) {
