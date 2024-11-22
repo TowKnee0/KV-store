@@ -69,6 +69,7 @@ shared_ptr<frame> ExtHash::createFrame(const string filename, int pageNumber, ve
     new_frame->dirty = false;
     new_frame->next = nullptr;
     new_frame->recently_used = true;
+    new_frame->deleted = false;
 
     return new_frame;
 }
@@ -367,6 +368,14 @@ void ExtHash::evict()
             continue;
         }
 
+        // If we encounter a deleted frame in the clock, remove it and continue searching.
+        if (this->clock[this->curr_hand]->deleted){
+            this->clock[this->curr_hand] = nullptr;
+            this->curr_hand = (this->curr_hand + 1) % clock.size();
+            continue;
+        }
+
+        
         if (this->clock[this->curr_hand]->recently_used == false){
             found_not_recently_used = true;
         } else {
@@ -420,4 +429,67 @@ void ExtHash::evict()
     {
         this->io_handler->writeToFile(evicting->filename, evicting->data, evicting->pageNumber);
     }
+}
+
+/**
+ * @brief Deletes a page or all pages from the hash table.
+ * 
+ * This function deletes a specific page if provided. Otherwise deletes all pages.
+ * 
+ * If the file and page number don't exist, does nothing.
+ * 
+ * @param filename The name of the file from which the page(s) should be deleted.
+ * @param pageNumber The page number to be deleted. If -1, all pages are deleted.
+ */
+void ExtHash::del(string filename, int pageNumber)
+{
+
+    // Delete all pages
+    if (pageNumber == -1){
+        int pages = this->io_handler->numPagesInFile(filename);
+        for (int i = 1; i <= pages; i++){
+            this->del(filename, i);
+        }
+        return;
+    }
+
+    // Calculate the hash of the filename and pageNumber
+    xxh::hash_t<32> hash = this->getHash(filename, pageNumber);
+
+    // Get which index this hash should be stored in.
+    uint32_t index = this->GetIndexFromHashAndBitSize(hash, this->directory_bit_size);
+    shared_ptr<frame> current_frame = this->directory[index];
+    shared_ptr<frame> prev_frame = nullptr;
+    
+    if (current_frame->filename == filename && current_frame->pageNumber == pageNumber){
+        this->directory[index] = current_frame->next;
+        this->bucket_counts[index]--;
+        current_frame->deleted = true;
+        this->item_count--;
+        
+        // Iterate over the directory to find all the indicies that point to the current frame.
+        for (int i = 0; i < this->directory.size(); i++)
+        {
+            if (this->directory[i] == current_frame)
+            {
+                this->directory[i] = current_frame->next;
+                this->bucket_counts[i]--;
+            }
+        }
+    } else {
+        while (current_frame != nullptr)
+        {
+            if (current_frame->pageNumber == pageNumber && current_frame->filename == filename)
+            {
+                prev_frame->next = current_frame->next;
+                current_frame->deleted = true;
+                this->bucket_counts[index]--;
+                this->item_count--;
+            }
+            prev_frame = current_frame;
+            current_frame = current_frame->next;
+        }
+    }
+    
+    return;
 }

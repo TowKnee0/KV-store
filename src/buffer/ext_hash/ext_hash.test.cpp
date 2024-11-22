@@ -193,3 +193,38 @@ TEST(ExtHashTest, ShrinkDirectory){
     EXPECT_EQ(hashTable.directory_bit_size, 5);
 
 }
+
+TEST(ExtHashTest, DeletePage){
+    shared_ptr<MockIOHandler> mockIOHandler = make_shared<MockIOHandler>();
+    ExtHash hashTable(1, 100, 0.8, 1, mockIOHandler);
+
+    string filename = "file";
+    int pageNumber = 1;
+    vector<pair<int, int>> data = {{1, 100}};
+
+    // after we get it, it will try to get from storage.
+    EXPECT_CALL(*mockIOHandler, readPageFromFile(filename, pageNumber)).WillOnce(Return(nullopt));
+    EXPECT_CALL(*mockIOHandler, numPagesInFile(filename)).WillOnce(Return(1));
+
+    hashTable.putPage(filename, pageNumber, data);
+
+    EXPECT_EQ(hashTable.item_count, 1);
+
+    hashTable.del(filename);
+
+    hashTable.getPage(filename, pageNumber);
+    
+    for (int i = 1; i <= 100; i++)
+    {
+        hashTable.evict();
+    }
+
+    for (int i = 0; i < hashTable.clock.size(); i++)
+    {
+        ASSERT_EQ(hashTable.clock[i], nullptr);
+    }
+    
+
+    EXPECT_EQ(hashTable.item_count, 0);
+    EXPECT_EQ(hashTable.directory[0], nullptr);
+}

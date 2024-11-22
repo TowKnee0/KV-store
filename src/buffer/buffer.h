@@ -13,6 +13,7 @@ private:
 
 public:
     virtual optional<vector<pair<int, int>>> getPage(const string filename, int pageNumber) = 0;
+    void del(string filename, int pageNumber = -1);
     virtual void putPage(const string filename, int pageNumber, vector<pair<int, int>> data, bool dirty = false) = 0;
     virtual void updateMaximumSizeInPages(int newMaximumSizeInPages) = 0;
     virtual ~Buffer() = default;

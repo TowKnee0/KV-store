@@ -16,6 +16,7 @@ struct frame
     int pageNumber;
     xxh::hash_t<32> hash;
     bool dirty;
+    bool deleted;
     shared_ptr<frame> next;
 };
 
@@ -31,6 +32,7 @@ private:
 
     int item_count;
     vector<int> bucket_counts;
+
 
     void checkAndSplitBucket(int index);
 
@@ -55,6 +57,7 @@ private:
 public:
     ExtHash(int minimumSizeInPages, int maximumSizeInPages, float expand_factor, int frame_size, shared_ptr<IO> io_handler);
     void updateMaximumSizeInPages(int newMaximumSizeInPages);
+    void del(string filename, int pageNumber = -1);
     void putPage(const string filename, int pageNumber, vector<pair<int, int>> data, bool dirty = false);
     optional<vector<pair<int, int>>> getPage(const string filename, int pageNumber);
 };
