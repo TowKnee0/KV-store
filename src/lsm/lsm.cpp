@@ -21,6 +21,14 @@ void Lsm::put(int key, int value) {
     }
 
     vector<pair<int, int>> data = this->memtable->inOrder();
+
+    cout << "writing memtable to disk. memtable data: ";
+    for (int i = 0; i < data.size(); i++) {
+        cout << "(" << data[i].first << ", " << data[i].second << "), ";
+    }
+    cout << endl;
+
+
     this->memtable->clear();
     this->memtable->put(key, value);
 

@@ -61,6 +61,12 @@ void Bst::rightRotate(shared_ptr<node> y) {
 }
 
 int Bst::put(int key, int value) {
+    shared_ptr<node> update = getNode(key);
+    if (update != nullptr) {
+        update->value = value;
+        return EXIT_SUCCESS;
+    }
+
     if (c_size >= max_size) {
         return EXIT_FAILURE;
     }
@@ -136,17 +142,25 @@ void Bst::fix(shared_ptr<node> z) {
 }
 
 optional<int> Bst::get(int key) {
+    shared_ptr<node> ret = getNode(key);
+    if (ret == nullptr) {
+        return nullopt;
+    }
+    return ret->value;
+}
+
+shared_ptr<node> Bst::getNode(int key) {
     shared_ptr<node> curr = root;
     while (curr != nullptr) {
         if (key == curr->key) {
-            return curr->value;
+            return curr;
         } else if (key < curr->key) {
             curr = curr->left;
         } else {
             curr = curr->right;
         }
     }
-    return nullopt;
+    return nullptr;
 }
 
 vector<pair<int, int>> Bst::inOrder() {
