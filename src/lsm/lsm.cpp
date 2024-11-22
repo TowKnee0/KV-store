@@ -65,11 +65,11 @@ void Lsm::del(int key) {
 }
 
 optional<int> Lsm::get(int key) {
-    if (int ret = this->memtable->get(key) != nullopt) {
-        if (ret == INT_MIN) {
-            return nullopt;
-        }
-        return ret;
+    optional<int> ret = this->memtable->get(key);
+    if (ret.has_value() && ret.value() == INT_MIN) {
+        return nullopt;
+    } else if (ret.has_value()) {
+        return ret.value();
     }
 
     for (shared_ptr<BTree> tree: this->trees) {

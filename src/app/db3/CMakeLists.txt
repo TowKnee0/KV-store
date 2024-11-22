@@ -8,3 +8,6 @@ target_link_libraries(db3_test PRIVATE db3 GTest::gtest_main gmock io_handler ex
 add_executable(exp3 exp3.cpp)
 target_link_libraries(exp3 db3)
 
+add_executable(run run.cpp)
+target_link_libraries(run db3)
+
