@@ -163,7 +163,17 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
         }
     }
 
+
     while (!pq.empty()) {
+        cout << "==================" << endl;
+        for (int i = 0; i < pages.size(); i++) {
+            cout << "level " << i << ": ";
+            for (int j = 0; j < pages[i].size(); j++) {
+                cout << "(" << pages[i][j].first << ", " << pages[i][j].second << "), ";
+            }
+            cout << endl;
+        }
+
         auto [key, recency, idx] = pq.top();
         pq.pop();
         
@@ -184,10 +194,12 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
             }
 
             curr_page[idx]++;
+            cout << "getting page. filename: " << trees[idx-1]->getFilename() << ", page_num: " << curr_page[idx] << endl;
             optional<vector<pair<int, int>>> page = this->buffer->getPage(trees[idx-1]->getFilename(), curr_page[idx]);
             if (!page.has_value()) {
                 continue;
             }
+            cout << "theres actually a second page?" << endl;
             pages[idx] = page.value();
             read_indexes[idx] = 0;
         }
