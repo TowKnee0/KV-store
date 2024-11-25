@@ -7,6 +7,7 @@
 #include "../filter/bloom_filter/bloom_filter.h"
 #include "../memtable/memtable.h"
 #include "../sst/btree/factory.h"
+#include "../buffer/buffer.h"
 #include "../io/io.h"
 #include <limits.h>
 #include <gtest/gtest.h>

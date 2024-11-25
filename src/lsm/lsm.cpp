@@ -50,7 +50,6 @@ void Lsm::put(int key, int value) {
 
             cout << "finished writing temp" << endl;
             
-        
             return;
         }
 
@@ -64,6 +63,8 @@ void Lsm::put(int key, int value) {
 
         io->del(temp->filename);
         io->del(tree->filename);
+        this->buffer->del(temp->filename);
+        this->buffer->del(temp->filename);
         this->trees[tlevel-1] = nullptr;
 
         merged->rename("temp");
