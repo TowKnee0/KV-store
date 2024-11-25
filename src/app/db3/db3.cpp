@@ -54,3 +54,6 @@ void Db3::close() {
     lsm->save();
 }
 
+void Db3::del(int key) {
+    lsm->del(key);
+}

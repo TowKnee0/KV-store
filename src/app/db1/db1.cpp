@@ -165,55 +165,6 @@ vector<pair<int, int>> Db1::scan(int key1, int key2)
         }
     }
     return combined;
-
-    // // Scan the memtable first
-    // vector<pair<int, int>> memtable_entries = memtable->scan(key1, key2);
-
-    // vector<vector<pair<int, int>>> results;
-
-    // results.push_back(memtable_entries);
-    // for (auto &s : sst)
-    // {
-    //     vector<pair<int, int>> entries = s->scan(key1, key2);
-    //     if (entries.size() != 0)
-    //     {
-    //         results.push_back(entries);
-    //     }
-    // }
-
-    // // create a vector which stores the current index of each sst
-    // vector<int> indexes(results.size(), 0);
-
-    // // Combine the results in sorted order.
-    // vector<pair<int, int>> combined;
-
-    // // Min heap stores the current key, with what pq it came from
-    // priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> min_heap;
-
-    // for (int i = 0; i < results.size(); i++)
-    // {
-    //     if (results[i].size() > 0)
-    //     {
-    //         min_heap.push({results[i].at(0).first, i});
-    //     }
-    // }
-
-    // while (!min_heap.empty())
-    // {
-    //     auto [key, i] = min_heap.top();
-    //     min_heap.pop();
-
-    //     combined.push_back({key, results[i].at(indexes[i]).second});
-    //     indexes[i]++;
-
-    //     if (indexes[i] < results[i].size())
-    //     {
-    //         min_heap.push({results[i].at(indexes[i]).first, i});
-    //     }
-    // }
-
-    // return combined;
-    return {};
 }
 
 void Db1::close()
@@ -223,3 +174,4 @@ void Db1::close()
         write_memtable();
     }
 }
+void Db1::del(int key) {}

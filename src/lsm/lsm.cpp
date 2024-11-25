@@ -186,7 +186,9 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
         }
 
         if (key != prev_key) {
-            ret.push_back(pages[idx][read_indexes[idx]]);
+            if (pages[idx][read_indexes[idx]].second != INT_MIN) {
+                ret.push_back(pages[idx][read_indexes[idx]]);
+            }
             prev_key = key;
         }
 

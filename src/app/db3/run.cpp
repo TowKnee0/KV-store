@@ -52,6 +52,9 @@ int main()
                 cout << "(" << res[i].first << ", " << res[i].second << "), ";
             }
             cout << endl;
+        } else if (query == "del") {
+            cin >> a;
+            db->del(a);
         } else if (query == "close") {
             break;
         } else {

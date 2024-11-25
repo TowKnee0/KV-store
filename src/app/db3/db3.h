@@ -33,6 +33,7 @@ class Db3 : public Db {
         void put(int key, int value);
         optional<int> get(int key);
         vector<pair<int, int>> scan(int key1, int key2);
+        void del (int key);
         void change_buffer_size(int new_max_page_size);
         void close();
 };

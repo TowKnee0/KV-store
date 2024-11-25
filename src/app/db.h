@@ -11,6 +11,7 @@ public:
     virtual optional<int> get(int key)=0;
     virtual vector<pair<int, int>> scan(int key1, int key2)=0;
     virtual void close()=0;
+    virtual void del(int key)=0;
 
     virtual ~Db() = default;
 };
