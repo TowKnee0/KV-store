@@ -61,10 +61,9 @@ void Lsm::put(int key, int value) {
         shared_ptr<BTree> merged = this->factory->create("merged", this->dbname, this->io, this->buffer, make_shared<BloomFilter>(this->filter_size_in_bits));
         merged->mergeBTrees(tree->filename, temp->filename);
 
-        io->del(temp->filename);
-        io->del(tree->filename);
+
         this->buffer->del(temp->filename);
-        this->buffer->del(temp->filename);
+        this->buffer->del(tree->filename);
         this->trees[tlevel-1] = nullptr;
 
         merged->rename("temp");

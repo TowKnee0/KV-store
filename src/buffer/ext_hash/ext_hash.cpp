@@ -425,7 +425,7 @@ void ExtHash::evict()
     }
     this->item_count--;
     this->clock[this->curr_hand] = nullptr;
-    if (evicting->dirty)
+    if (evicting->dirty && !evicting->deleted)
     {
         this->io_handler->writeToFile(evicting->filename, evicting->data, evicting->pageNumber);
     }
@@ -450,6 +450,8 @@ void ExtHash::del(string filename, int pageNumber)
         for (int i = 1; i <= pages; i++){
             this->del(filename, i);
         }
+        // Delete the file after we got the number of pages from it.
+        this->io_handler->del(filename);
         return;
     }
 
@@ -461,6 +463,11 @@ void ExtHash::del(string filename, int pageNumber)
     shared_ptr<frame> current_frame = this->directory[index];
     shared_ptr<frame> prev_frame = nullptr;
     
+    // Doesnt exist anyway
+    if (current_frame == nullptr){
+        return;
+    }
+
     if (current_frame->filename == filename && current_frame->pageNumber == pageNumber){
         this->directory[index] = current_frame->next;
         this->bucket_counts[index]--;
@@ -490,6 +497,5 @@ void ExtHash::del(string filename, int pageNumber)
             current_frame = current_frame->next;
         }
     }
-    
     return;
 }
