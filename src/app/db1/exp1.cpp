@@ -66,10 +66,10 @@ int main()
         int num_get = count_get(db, duration);
         int num_scan = count_scan(db, duration);
 
-        cout << "Current db size: " << num_put * 16 << "bytes" << endl;
-        cout << "num_put/s: " << num_put / duration_int << endl;
-        cout << "num_get/s: " << num_get / duration_int << endl;
-        cout << "num_scan/s: " << num_scan / duration_int << endl;
+        cout << "Current db size, " << num_put * 16 << "bytes" << endl;
+        cout << "num_put/s, " << num_put / duration_int << endl;
+        cout << "num_get/s, " << num_get / duration_int << endl;
+        cout << "num_scan/s, " << num_scan / duration_int << endl;
     }
     db->close();
 }

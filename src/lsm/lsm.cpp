@@ -21,14 +21,6 @@ void Lsm::put(int key, int value) {
     }
 
     vector<pair<int, int>> data = this->memtable->inOrder();
-
-    cout << "writing memtable to disk. memtable data: ";
-    for (int i = 0; i < data.size(); i++) {
-        cout << "(" << data[i].first << ", " << data[i].second << "), ";
-    }
-    cout << endl;
-
-
     this->memtable->clear();
     this->memtable->put(key, value);
 
@@ -40,16 +32,12 @@ void Lsm::put(int key, int value) {
         int clevel = i + 1;
         // empty level
         if (tree == nullptr) {
-            cout << "tree is null at level " << i+1 << endl;
             if (this->trees[clevel - 1] != nullptr) {
                 throw runtime_error("Attempt to overwrite existing BTree at index: " + to_string(clevel - 1));
             }
 
             temp->rename(this->level_prefix + to_string(clevel));
-            this->trees[clevel-1] = temp;
-
-            cout << "finished writing temp" << endl;
-            
+            this->trees[clevel-1] = temp;            
             return;
         }
 
@@ -169,15 +157,6 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
 
 
     while (!pq.empty()) {
-        cout << "==================" << endl;
-        for (int i = 0; i < pages.size(); i++) {
-            cout << "level " << i << ": ";
-            for (int j = 0; j < pages[i].size(); j++) {
-                cout << "(" << pages[i][j].first << ", " << pages[i][j].second << "), ";
-            }
-            cout << endl;
-        }
-
         auto [key, recency, idx] = pq.top();
         pq.pop();
         
@@ -204,12 +183,10 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
                 continue;
             }
 
-            cout << "getting page. filename: " << trees[idx-1]->getFilename() << ", page_num: " << curr_page[idx] << endl;
             optional<vector<pair<int, int>>> page = this->buffer->getPage(trees[idx-1]->getFilename(), curr_page[idx]);
             if (!page.has_value()) {
                 continue;
             }
-            cout << "theres actually a second page?" << endl;
             pages[idx] = page.value();
             read_indexes[idx] = 0;
         }
