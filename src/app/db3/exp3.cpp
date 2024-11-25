@@ -4,17 +4,15 @@
 
 using namespace chrono;
 
-int count_put(const unique_ptr<Db> &db, seconds s)
+duration<double> put(const unique_ptr<Db> &db, int count)
 {
-    auto stop = high_resolution_clock::now() + s;
-    int count = 0;
-    while (high_resolution_clock::now() < stop)
+    auto start = high_resolution_clock::now();
+    for (int i = 0; i < count; i++)
     {
-        // cout << count << endl;
+        cout << "put: " << i << " " << count << endl;
         db->put(rand(), rand());
-        count++;
     }
-    return count;
+    return high_resolution_clock::now() - start;
 }
 
 int count_get(const unique_ptr<Db> &db, seconds s)
@@ -47,18 +45,25 @@ int count_scan(const unique_ptr<Db> &db, seconds s)
     return count;
 }
 
-// TODO: should take in argc and argv to configure memtable size and number of loops
 int main()
 {
-    const int entry_size = 16;
-    const int memtable_size = 1048576 / entry_size; // 5mb
-    const int benchmark_interval = 10485760;        // 1mb intervals
+    const int megabyte = 1048576;
+    const int gigabyte = 1073741824;
+    // 4 bytes per int, 8 bytes per entry
+    const int entry_size = 8;
+    // Memtable takes in number of entries
+    const int memtable_size = megabyte / entry_size;
+
+    const int buffer_pool_pages = (10*megabyte) / 4096; // 4kb pages
+    const int filter_bits_per_entry = 8;
+
+    const int benchmark_interval = 100*megabyte;        // 100mb intervals
     const int entries_per_interval = benchmark_interval / entry_size;
-    const int max_size = 10485760; // 50mb
-    const seconds duration(2);
+    const int max_size = gigabyte;
+    const seconds duration(5);
     const int duration_int = static_cast<int>(duration.count());
 
-    unique_ptr<Db> db = make_unique<Db3>(memtable_size, 1, 100, 0.8, 3, 8, false);
+    unique_ptr<Db> db = make_unique<Db3>(memtable_size, 1, buffer_pool_pages, 0.8, 3, filter_bits_per_entry, false);
 
     cout << "Open Db" << endl;
 
@@ -66,12 +71,14 @@ int main()
 
     for (int i = 0; i < max_size / benchmark_interval; i++)
     {
-        int num_put = count_put(db, duration);
+        // insert fixed amount of data
+        auto put_time = put(db, benchmark_interval / entry_size);
+        // then get/scan for fixed duration to not make experiment too long
         int num_get = count_get(db, duration);
         int num_scan = count_scan(db, duration);
 
-        cout << "Current db size, " << num_put * 16 << " bytes" << endl;
-        cout << "num_put/s, " << num_put / duration_int << endl;
+        cout << "Current db size, " << (i+1) * benchmark_interval << " bytes" << endl;
+        cout << "num_put/s, " << (benchmark_interval / entry_size) / static_cast<int>(duration_cast<seconds>(put_time).count()) << endl;
         cout << "num_get/s, " << num_get / duration_int << endl;
         cout << "num_scan/s, " << num_scan / duration_int << endl;
     }
