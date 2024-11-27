@@ -9,7 +9,7 @@ duration<double> put(const unique_ptr<Db> &db, int count)
     auto start = high_resolution_clock::now();
     for (int i = 0; i < count; i++)
     {
-        cout << "put: " << i << " " << count << endl;
+        // cout << "put: " << i << " " << count << endl;
         db->put(rand(), rand());
     }
     return high_resolution_clock::now() - start;
@@ -47,6 +47,7 @@ int count_scan(const unique_ptr<Db> &db, seconds s)
 
 int main()
 {
+    auto test_start_time = high_resolution_clock::now();
     const int megabyte = 1048576;
     const int gigabyte = 1073741824;
     // 4 bytes per int, 8 bytes per entry
@@ -84,4 +85,8 @@ int main()
     }
     cout << "closing db" << endl;
     db->close();
+    auto test_end_time = high_resolution_clock::now();
+    auto test_duration = duration_cast<seconds>(test_end_time - test_start_time);
+    cout << "Test duration: " << test_duration.count() << " seconds" << endl;
+    cout << "Test duration in minutes " << test_duration.count() / 60 << " minutes" << endl;
 }

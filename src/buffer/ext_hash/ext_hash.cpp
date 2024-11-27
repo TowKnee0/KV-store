@@ -345,7 +345,6 @@ optional<vector<pair<int, int>>> ExtHash::getPage(const string filename, int pag
     if (page.has_value())
     {
         this->putPage(filename, pageNumber, page.value());
-
         return page;
     }
 
