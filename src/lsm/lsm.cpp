@@ -35,7 +35,7 @@ void Lsm::put(int key, int value) {
             if (this->trees[clevel - 1] != nullptr) {
                 throw runtime_error("Attempt to overwrite existing BTree at index: " + to_string(clevel - 1));
             }
-
+            
             temp->rename(this->level_prefix + to_string(clevel));
             this->trees[clevel-1] = temp;            
             return;
@@ -50,7 +50,7 @@ void Lsm::put(int key, int value) {
         merged->mergeBTrees(tree->filename, temp->filename);
 
 
-        this->buffer->del(temp->filename);
+        // this->buffer->del(temp->filename);
         this->buffer->del(tree->filename);
         this->trees[tlevel-1] = nullptr;
 
@@ -154,7 +154,6 @@ vector<pair<int, int>> Lsm::scan(int start, int end) {
             pq.push({temp[2], i+1, i+1});
         }
     }
-
 
     while (!pq.empty()) {
         auto [key, recency, idx] = pq.top();

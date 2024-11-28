@@ -146,6 +146,22 @@ void ExtHash::putPage(const string filename, int pageNumber, vector<pair<int, in
     {
         this->directory[index] = new_frame;
     } else {
+
+
+        // Check if the page is already in the directory.
+        shared_ptr<frame> current_frame = this->directory[index];
+        while (current_frame != nullptr)
+        {
+            if (current_frame->filename == filename && current_frame->pageNumber == pageNumber)
+            {
+                // Page is already in the directory, update the data.
+                current_frame->data = data;
+                current_frame->dirty = dirty;
+                return;
+            }
+            current_frame = current_frame->next;
+        }
+
         // bucket is not empty, insert the frame into the second position.
         // IMPORTANT: WE DO THIS BECAUSE OTHERWISE IF MULTIPLE INDEXES POINT TO THE SAME BUCKET,
         // ONLY ONE WOULD BE UPDATED TO HAVE THE NEW HEAD.
@@ -440,7 +456,7 @@ void ExtHash::evict()
  * @param filename The name of the file from which the page(s) should be deleted.
  * @param pageNumber The page number to be deleted. If -1, all pages are deleted.
  */
-void ExtHash::del(string filename, int pageNumber)
+void ExtHash::del(string filename, int pageNumber, bool delete_file)
 {
 
     // Delete all pages
@@ -450,7 +466,9 @@ void ExtHash::del(string filename, int pageNumber)
             this->del(filename, i);
         }
         // Delete the file after we got the number of pages from it.
-        this->io_handler->del(filename);
+        if (delete_file){
+            this->io_handler->del(filename);
+        }
         return;
     }
 
@@ -497,4 +515,32 @@ void ExtHash::del(string filename, int pageNumber)
         }
     }
     return;
+}
+
+int ExtHash::rename(string old_name, string new_name, int pageNumber){
+
+    // Rename all pages.
+    if (pageNumber == -1){
+        int pages = this->io_handler->numPagesInFile(old_name);
+        for (int i = 1; i <= pages; i++){
+            this->rename(old_name, new_name, i);
+        }
+        return this->io_handler->renameFile(old_name, new_name);
+    }
+
+    xxh::hash_t<32> hash = this->getHash(old_name, pageNumber);
+    uint32_t index = this->GetIndexFromHashAndBitSize(hash, this->directory_bit_size);
+    shared_ptr<frame> current_frame = this->directory[index];
+    while (current_frame != nullptr)
+    {
+        if (current_frame->pageNumber == pageNumber && current_frame->filename == old_name)
+        {
+            vector <pair<int, int>> data = current_frame->data;
+            this->del(old_name, pageNumber, false);
+            this->putPage(new_name, pageNumber, data, current_frame->dirty);
+            return 1;
+        }
+        current_frame = current_frame->next;
+    }
+    return 1;
 }

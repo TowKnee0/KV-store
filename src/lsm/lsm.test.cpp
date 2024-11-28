@@ -42,7 +42,8 @@ public:
     MOCK_METHOD((optional<vector<pair<int, int>>>), getPage, (const string filename, int pageNumber));
     MOCK_METHOD(void, putPage, (const string filename, int pageNumber, (vector<pair<int, int>> data), bool dirty));
     MOCK_METHOD(void, updateMaximumSizeInPages, (int newMaximumSizeInPages));
-    MOCK_METHOD(void, del, (string filename, int pagenumber));
+    MOCK_METHOD(void, del, (string filename, int pagenumber, bool delete_file));
+    MOCK_METHOD(int, rename, (string old_name, string new_name, int pageNumber));
 };
 
 class MockBTree : public BTree

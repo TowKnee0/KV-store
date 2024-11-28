@@ -38,7 +38,6 @@ private:
 
     // Varaibles which need to be found
     int height = -1;
-
     vector<pair<int, int>> contructInternalNodes();
     pair<int, pair<int, int>> findKeyInPage(int key, int page_location);
     void loadMetadata();

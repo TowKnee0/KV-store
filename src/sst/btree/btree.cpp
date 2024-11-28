@@ -90,6 +90,25 @@ void BTree::loadMetadata()
   this->height = metadata_data[BTree::B_TREE_HEIGHT_INDEX].second;
 
   this->num_leaf_pages = numNodes(this->num_data, this->B);
+
+  if (this->filter == nullptr)
+  {
+    return;
+  }
+  // Since we dont store the filters in storage (Since our group member dropped and had the outline modifed for our project)
+  // We need to load all the data into the filter.
+  for (int i = 1; i <= this->num_leaf_pages; i++)
+  {
+    optional<vector<pair<int, int>>> page = this->buffer->getPage(this->filename, i);
+    if (!page.has_value())
+    {
+      throw runtime_error("Error reading page from file");
+    }
+    for (pair<int, int> pair : page.value())
+    {
+      this->filter->addKey(pair.first);
+    }
+  }
 }
 
 /**
@@ -559,6 +578,11 @@ vector<int> BTree::getKeyData(int key)
  */
 optional<int> BTree::btreeGet(int key)
 {
+  // // // TODO: DELETE THIS
+  // this->printTree();
+  // return nullopt;
+
+
   vector<int> key_data = getKeyData(key);
   if (key_data[2] != key)
   {
@@ -718,7 +742,7 @@ optional<int> BTree::get(int key)
  */
 void BTree::rename(string filename)
 {
-  int renamed = this->io_handler->renameFile(this->filename, filename);
+  int renamed = this->buffer->rename(this->filename, filename);
   if (renamed == -1)
   {
     string error_msg = "Error renaming file: " + this->filename;

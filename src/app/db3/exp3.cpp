@@ -1,17 +1,27 @@
 #include "db3.h"
 #include <iostream>
 #include <chrono>
-
+#include <limits>
 using namespace chrono;
 
 duration<double> put(const unique_ptr<Db> &db, int count)
 {
+    auto put_start = high_resolution_clock::now();
     auto start = high_resolution_clock::now();
     for (int i = 0; i < count; i++)
     {
         // cout << "put: " << i << " " << count << endl;
+        static constexpr int INF = numeric_limits<int>::max();
+        
+        int Min = 0;
+        int Max = numeric_limits<int>::max() - 1;
+
+        int key = rand() % (Max + 1 - Min) + Min;
+        int value = rand() % (Max + 1 - Min) + Min;
         db->put(rand(), rand());
     }
+    auto put_end = high_resolution_clock::now();
+    cout << "Put duration: " << duration_cast<seconds>(put_end - put_start).count() << " seconds" << endl;
     return high_resolution_clock::now() - start;
 }
 
@@ -27,7 +37,7 @@ int count_get(const unique_ptr<Db> &db, seconds s)
     return count;
 }
 
-int count_scan(const unique_ptr<Db> &db, seconds s)
+int count_scan(const unique_ptr<Db> &db, seconds s, int scan_distance)
 {
     int a, b, high, low;
 
@@ -35,13 +45,16 @@ int count_scan(const unique_ptr<Db> &db, seconds s)
     int count = 0;
     while (high_resolution_clock::now() < stop)
     {
+        
         a = rand();
-        b = rand();
-        low = min(a, b);
-        high = max(a, b);
-        db->scan(low, high);
+
+        // b = rand();
+        // low = min(a, b);
+        // high = max(a, b);
+        db->scan(a, a + scan_distance);
         count++;
     }
+    cout << "Scan count: " << count << endl;
     return count;
 }
 
@@ -59,8 +72,11 @@ int main()
     const int filter_bits_per_entry = 8;
 
     const int benchmark_interval = 100*megabyte;        // 100mb intervals
+
     const int entries_per_interval = benchmark_interval / entry_size;
     const int max_size = gigabyte;
+
+    const int scan_distance = 10000;
     const seconds duration(5);
     const int duration_int = static_cast<int>(duration.count());
 
@@ -76,7 +92,7 @@ int main()
         auto put_time = put(db, benchmark_interval / entry_size);
         // then get/scan for fixed duration to not make experiment too long
         int num_get = count_get(db, duration);
-        int num_scan = count_scan(db, duration);
+        int num_scan = count_scan(db, duration, scan_distance);
 
         cout << "Current db size, " << (i+1) * benchmark_interval << " bytes" << endl;
         cout << "num_put/s, " << (benchmark_interval / entry_size) / static_cast<int>(duration_cast<seconds>(put_time).count()) << endl;

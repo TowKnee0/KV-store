@@ -74,7 +74,6 @@ optional<int> Db1::get(int key)
 
 vector<pair<int, int>> Db1::scan(int key1, int key2)
 {
-
     vector<vector<pair<int, int>>> SST_to_PAGE(sst.size() + 1);
     vector<int> SST_to_PAGE_index(sst.size() + 1);
     vector<int> SST_to_PAGE_NUM(sst.size() + 1);

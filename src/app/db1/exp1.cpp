@@ -9,7 +9,6 @@ duration<double> put(const unique_ptr<Db> &db, int count)
     auto start = high_resolution_clock::now();
     for (int i = 0; i < count; i++)
     {
-        // cout << "put: " << i << " " << count << endl;
         db->put(rand(), rand());
     }
     return high_resolution_clock::now() - start;
