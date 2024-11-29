@@ -37,7 +37,7 @@ int count_get(const unique_ptr<Db> &db, seconds s)
     return count;
 }
 
-int count_scan(const unique_ptr<Db> &db, seconds s, int scan_distance)
+int count_scan(const unique_ptr<Db> &db, seconds s)
 {
     int a, b, high, low;
 
@@ -45,13 +45,13 @@ int count_scan(const unique_ptr<Db> &db, seconds s, int scan_distance)
     int count = 0;
     while (high_resolution_clock::now() < stop)
     {
-        
-        a = rand();
+        // fixed range scan
+        a = rand() % (RAND_MAX - 10000);
+        b = a + 10000;
 
-        // b = rand();
-        // low = min(a, b);
-        // high = max(a, b);
-        db->scan(a, a + scan_distance);
+        low = min(a, b);
+        high = max(a, b);
+        db->scan(low, high);
         count++;
     }
     cout << "Scan count: " << count << endl;
@@ -82,24 +82,21 @@ int main()
 
     unique_ptr<Db> db = make_unique<Db3>(memtable_size, 1, buffer_pool_pages, 0.8, 3, filter_bits_per_entry, false);
 
-    cout << "Open Db" << endl;
-
     db->open("exp3");
+    cout << "Current size(bytes),put/s,get/s,scan/s" << endl;
+
 
     for (int i = 0; i < max_size / benchmark_interval; i++)
     {
-        // insert fixed amount of data
         auto put_time = put(db, benchmark_interval / entry_size);
-        // then get/scan for fixed duration to not make experiment too long
-        int num_get = count_get(db, duration);
-        int num_scan = count_scan(db, duration, scan_distance);
+        float put_per_sec = (benchmark_interval / entry_size) / static_cast<float>(duration_cast<seconds>(put_time).count());
 
-        cout << "Current db size, " << (i+1) * benchmark_interval << " bytes" << endl;
-        cout << "num_put/s, " << (benchmark_interval / entry_size) / static_cast<int>(duration_cast<seconds>(put_time).count()) << endl;
-        cout << "num_get/s, " << num_get / duration_int << endl;
-        cout << "num_scan/s, " << num_scan / duration_int << endl;
+        float num_get = count_get(db, duration);
+        float num_scan = count_scan(db, duration);
+
+        int c_size = (i+1) * benchmark_interval;
+        cout << c_size << "," << put_per_sec << "," << num_get / duration_int << "," << num_scan / duration_int << endl;
     }
-    cout << "closing db" << endl;
     db->close();
     auto test_end_time = high_resolution_clock::now();
     auto test_duration = duration_cast<seconds>(test_end_time - test_start_time);
