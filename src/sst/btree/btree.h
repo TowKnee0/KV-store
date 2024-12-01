@@ -44,11 +44,13 @@ private:
     vector<pair<int, int>> constructMetadata();
 
     optional<int> btreeGet(int key);
+    vector<int> getKeyDataBTree(int key);
 
     // Methods for binary search
     optional<pair<vector<pair<int, int>>, int>> findPageWithValueEqualToOrGraterThan(int key);
     optional<pair<pair<int, int>, int>> FindEqualToOrNextLargestInPage(int key, vector<pair<int, int>> page);
     optional<int> binarySearchGet(int key);
+    vector<int> getKeyDataBinarySearch(int key);
 
 public:
     string filename; // Which file the btree is stored in

@@ -516,6 +516,19 @@ pair<int, pair<int, int>> BTree::findKeyInPage(int key, int page_location)
 
 string BTree::getFilename() { return this->filename; }
 
+
+
+
+
+vector<int> BTree::getKeyData(int key)
+{
+  if (this->use_binary_search)
+  {
+    return this->getKeyDataBinarySearch(key);
+  }
+  return this->getKeyDataBTree(key);
+}
+
 /**
  * @brief Get the index, page, key and value of the key in the BTree.
  * Returns the next largest key if the key is not found.
@@ -524,8 +537,7 @@ string BTree::getFilename() { return this->filename; }
  * @param key The key to find in the BTree.
  * @return {int, int, int, int} The index, page, key and value of the key in the BTree.
  */
-
-vector<int> BTree::getKeyData(int key)
+vector<int> BTree::getKeyDataBTree(int key)
 {
   int page_index = 0;
   // Loop through each layer of the BTree, start at height - 1 since 1 indexed.
@@ -706,6 +718,25 @@ optional<pair<pair<int, int>, int>> BTree::FindEqualToOrNextLargestInPage(
     return nullopt;
   }
   return make_pair(page[low], low);
+}
+
+vector<int> BTree::getKeyDataBinarySearch(int key)
+{
+  optional<pair<vector<pair<int, int>>, int>> page_and_num =
+      this->findPageWithValueEqualToOrGraterThan(key);
+  if (page_and_num == nullopt)
+  {
+    return {-1, -1, -1, -1};
+  }
+  vector<pair<int, int>> page = page_and_num.value().first;
+  optional<pair<pair<int, int>, int>> result =
+      this->FindEqualToOrNextLargestInPage(key, page);
+  if (!result)
+  {
+    return {-1, -1, -1, -1};
+  }
+  pair<int, int> key_value = result.value().first;
+  return {result.value().second, page_and_num.value().second, key_value.first, key_value.second};
 }
 
 // SST INTERFACE METHODS
