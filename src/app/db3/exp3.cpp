@@ -21,7 +21,6 @@ duration<double> put(const unique_ptr<Db> &db, int count)
         db->put(rand(), rand());
     }
     auto put_end = high_resolution_clock::now();
-    cout << "Put duration: " << duration_cast<seconds>(put_end - put_start).count() << " seconds" << endl;
     return high_resolution_clock::now() - start;
 }
 
@@ -54,7 +53,6 @@ int count_scan(const unique_ptr<Db> &db, seconds s)
         db->scan(low, high);
         count++;
     }
-    cout << "Scan count: " << count << endl;
     return count;
 }
 
