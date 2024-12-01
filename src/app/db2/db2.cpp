@@ -32,7 +32,9 @@ void Db2::open(string name)
     vector<string> filenames = io_handler->getDbFilenames();
     for (auto &f : filenames)
     {
-        sst.push_back(make_unique<BTree>(f, name, io_handler, buffer));
+        // Remove the .bin extension
+        string new_filename = f.substr(0, f.find('.'));
+        sst.push_back(make_unique<BTree>(new_filename, name, io_handler, buffer));
     }
 }
 

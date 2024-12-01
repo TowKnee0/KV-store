@@ -25,7 +25,9 @@ void Db1::open(string name)
     vector<string> filenames = io_handler->getDbFilenames();
     for (auto &f : filenames)
     {
-        sst.push_back(make_unique<SortedList>(f, name, io_handler));
+        // Remove the .bin extension
+        string new_filename = f.substr(0, f.find('.'));
+        sst.push_back(make_unique<SortedList>(new_filename, name, io_handler));
     }
 }
 
