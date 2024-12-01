@@ -455,6 +455,7 @@ void ExtHash::evict()
  * 
  * @param filename The name of the file from which the page(s) should be deleted.
  * @param pageNumber The page number to be deleted. If -1, all pages are deleted.
+ * @param delete_file Whether to delete the file from storage as well.
  */
 void ExtHash::del(string filename, int pageNumber, bool delete_file)
 {
@@ -517,6 +518,17 @@ void ExtHash::del(string filename, int pageNumber, bool delete_file)
     return;
 }
 
+/**
+ * @brief Renames a file in the hash table
+ * 
+ * Deletes old page and reinserts with the new hash.
+ * 
+ * If pageNumber is -1, renames all pages and the file in storage.
+ * 
+ * @param old_name The current name of the file or page.
+ * @param new_name The new name for the file or page.
+ * @param pageNumber The page number to rename. If -1, all pages are renamed.
+ */
 int ExtHash::rename(string old_name, string new_name, int pageNumber){
 
     // Rename all pages.

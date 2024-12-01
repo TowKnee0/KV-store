@@ -50,7 +50,7 @@ void Lsm::put(int key, int value) {
         merged->mergeBTrees(tree->filename, temp->filename);
 
 
-        // this->buffer->del(temp->filename);
+        this->buffer->del(temp->filename);
         this->buffer->del(tree->filename);
         this->trees[tlevel-1] = nullptr;
 
