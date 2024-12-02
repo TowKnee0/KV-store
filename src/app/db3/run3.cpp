@@ -23,7 +23,7 @@ int main()
     const int bloom_filter_bits = 8;
     const string dbname = "test";
 
-    unique_ptr<Db> db = make_unique<Db3>(2, min_buffer_pages, max_buffer_pages, buffer_expand_factor, max_buffer_chain_length, bloom_filter_bits, false);
+    unique_ptr<Db> db = make_unique<Db3>(memtable_size, min_buffer_pages, max_buffer_pages, buffer_expand_factor, max_buffer_chain_length, bloom_filter_bits, false);
 
     db->open(dbname);
     cout << "db opened" << endl;

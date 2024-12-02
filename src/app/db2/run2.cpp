@@ -22,7 +22,7 @@ int main()
     const int max_buffer_chain_length = 10;
     const string dbname = "test";
 
-    unique_ptr<Db> db = make_unique<Db2>(2, min_buffer_pages, max_buffer_pages, buffer_expand_factor, max_buffer_chain_length, false);
+    unique_ptr<Db> db = make_unique<Db2>(memtable_size, min_buffer_pages, max_buffer_pages, buffer_expand_factor, max_buffer_chain_length, false);
 
     db->open(dbname);
     cout << "db opened" << endl;

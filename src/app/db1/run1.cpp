@@ -18,7 +18,7 @@ int main()
     const int memtable_size = 1048576 / entry_size;
     const string dbname = "test";
 
-    unique_ptr<Db> db = make_unique<Db1>(2);
+    unique_ptr<Db> db = make_unique<Db1>(memtable_size);
 
     db->open(dbname);
     cout << "db opened" << endl;
