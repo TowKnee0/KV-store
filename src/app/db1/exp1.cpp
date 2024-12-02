@@ -46,7 +46,6 @@ int count_scan(const unique_ptr<Db> &db, seconds s)
     return count;
 }
 
-// TODO: should take in argc and argv to configure memtable size and number of loops
 int main()
 {
     auto test_start_time = high_resolution_clock::now();

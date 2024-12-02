@@ -590,11 +590,6 @@ vector<int> BTree::getKeyDataBTree(int key)
  */
 optional<int> BTree::btreeGet(int key)
 {
-  // // // TODO: DELETE THIS
-  // this->printTree();
-  // return nullopt;
-
-
   vector<int> key_data = getKeyData(key);
   if (key_data[2] != key)
   {

@@ -18,7 +18,7 @@ class Db1 : public Db {
         
         void write_memtable();
 
-    // TODO: check which of these can be shared and put it as non-virtual in ../db.h
+
     public:
         Db1(int memtable_size);
         void open(string name);
